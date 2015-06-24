@@ -11,11 +11,15 @@
         <script type="text/javascript" src="../js/annomirror.js"></script>
         <script type="text/javascript">
             $(document).ready(function() {
-                $('textarea').annoMirror();
+                var $anno = $('textarea').annoMirror();
+                $anno.annoMirror('editor');
             });
         </script>
     </head>
     <body>
+        <div class="actions">
+            <button type="button" id="add-anno">Create Annotation</button>
+        </div>
         <textarea>
 CHAPTER I. Down the Rabbit-Hole
 
