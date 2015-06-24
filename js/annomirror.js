@@ -12,7 +12,8 @@
     var pluginName = "annoMirror";
     var defaults = {
         codeMirror: {
-            lineNumbers: true
+            lineNumbers: true,
+            readOnly: true
         }
     };
     var Plugin = function(element, options) {
@@ -27,7 +28,11 @@
         init: function() {
             this._editor = CM.fromTextArea(this.$el.get(0), this._settings.codeMirror);
         },
-        editor: function() { return this._editor; }
+        editor: function() { return this._editor; },
+        destroy: function() { 
+            this._editor.toTextArea();
+            this.$el.data('plugin_' + pluginName, null);
+        }
     });
 
     $.fn[pluginName] = function(methodOrOptions) {
@@ -35,7 +40,7 @@
             if (!$.data(this, "plugin_" + pluginName))
                 $.data(this, "plugin_" + pluginName, new Plugin(this, methodOrOptions));
         });
-        if (els.length == 1 && methodOrOptions) {
+        if (els.length == 1 && typeof methodOrOptions === 'string') {
             if (typeof Plugin.prototype[methodOrOptions] == 'function') {
                 var data = $.data(els[0], 'plugin_' + pluginName);
                 return data[methodOrOptions].apply(data, Array.prototype.slice.call(arguments, 1));

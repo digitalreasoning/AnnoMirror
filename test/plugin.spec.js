@@ -22,6 +22,26 @@ describe('AnnoMirror.constructor', function() {
         try { $el.annoMirror('thisDoesNotExistWOptions', "blah", [], { test: 1 }); }
         catch (err) { expect(err).toMatch('thisDoesNotExistWOptions'); }
     });
+    it('can add random options', function() {
+        loadFixtures('textarea.html');
+        $el = $('textarea');
+        $el.annoMirror({
+            thisIsNotATrueOption: true
+        });
+        expect($.data($el.get(0), 'plugin_annoMirror')._settings).toEqual(jasmine.objectContaining({
+            thisIsNotATrueOption: true
+        }));
+    });
+    it('can alter the CodeMirror defaults', function() {
+        loadFixtures('textarea.html');
+        $el = $('textarea');
+        $el.annoMirror({
+            codeMirror: {
+                lineNumbers: false
+            }
+        });
+        expect($('.CodeMirror-gutter-wrapper').length).toBe(0);
+    });
 });
 
 describe('AnnoMirror.editor', function() {
@@ -35,5 +55,20 @@ describe('AnnoMirror.editor', function() {
     it('returns a CodeMirror editor instance', function() {
         expect($el.annoMirror('editor')).toBeDefined();
         expect(typeof $el.annoMirror('editor').unlinkDoc).toBe('function');
+    });
+});
+
+describe('AnnoMirror.destroy', function() {
+    var $el;
+    beforeEach(function() {
+        loadFixtures('textarea.html');
+        $el = $('textarea');
+        $el.annoMirror();
+    });
+
+    it('removes the AnnoMirror instance', function() {
+        $el.annoMirror('destroy');
+        expect($('.CodeMirror').length).toBe(0);
+        expect($.data($el[0], 'plugin_annoMirror')).toEqual(null);
     });
 });
