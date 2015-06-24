@@ -9,3 +9,8 @@ bower install
 ```
 
 # Testing
+
+```
+npm test # One-off
+grunt watch # Monitors files and runs tests accordingly
+```
