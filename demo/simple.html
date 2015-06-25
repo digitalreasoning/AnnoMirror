@@ -12,7 +12,11 @@
         <script type="text/javascript">
             $(document).ready(function() {
                 var $anno = $('textarea').annoMirror();
-                $anno.annoMirror('destroy');
+                // Standard annotation
+                $anno.annoMirror('addAnnotation', 0, 19);
+                // Short annotation with long text
+                $anno.annoMirror('addAnnotation', 20, 22);
+                $anno.annoMirror('editor').setSelection({ line: 0, ch: 0 }, { line: 0, ch: 19 });
             });
         </script>
     </head>

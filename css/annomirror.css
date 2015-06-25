@@ -1,0 +1,34 @@
+.anno-line-widget {
+    position: relative;
+    cursor: default;
+}
+.annotation {
+    position: absolute;
+    bottom: 0;
+    text-align: center;
+}
+.anno-line-widget .annotation .text {
+
+}
+.anno-line-widget .annotation .indicator {
+    height: 2px;
+    width: auto;
+    background-color: #333;
+    margin: auto;
+}
+.anno-line-widget .annotation .arrow {
+    width: 0;
+    height: 0;
+    border-top: 3px solid transparent !important;
+    border-bottom: 3px solid transparent !important;
+    position: absolute;
+    bottom: -2px;
+}
+.anno-line-widget .annotation .arrow.left {
+    border-right: 6px solid #333;
+    left: -5px;
+}
+.anno-line-widget .annotation .arrow.right {
+    border-left: 6px solid #333;
+    right: -5px;
+}
