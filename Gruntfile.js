@@ -10,7 +10,8 @@ module.exports = function(grunt) {
                         'bower_components/jasmine-jquery/lib/jasmine-jquery.js',
                         'bower_components/codemirror/lib/codemirror.js'
                     ],
-                    specs: 'test/**/*.spec.js'
+                    specs: 'test/**/*.spec.js',
+                    keepRunner: true
                 }
             }
         },

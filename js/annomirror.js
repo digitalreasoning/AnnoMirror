@@ -16,27 +16,50 @@
             readOnly: true
         }
     };
+
+    var Annotation = function(options) {
+        this.id = options.id || -1;
+        this.start = options.start;
+        this.end = options.end;
+        this.text = options.text || '';
+        this.data = options.data || { };
+        if (this.id == -1)           throw "Annotation.constructor requires an id parameter."
+        if (this.start == undefined) throw "Annotation.constructor requires a start parameter.";
+        if (this.end == undefined)   throw "Annotation.constructor requires a end parameter.";
+    };
+    Annotation.prototype.annotationDummyFn = function() { };
+
     var Plugin = function(element, options) {
         this.$el = $(element);
         this._settings = $.extend({ }, defaults, options);
         this._defaults = defaults;
         this._name = pluginName;
+        this._annotations = [];
+        this._annoId = 1;
         this.init();
     }
     $.extend(Plugin.prototype, {
         init: function() {
             this._editor = CM.fromTextArea(this.$el.get(0), this._settings.codeMirror);
-            this._doc = this._editor.getDoc();
             this._gutterWidth = $(this._editor.getGutterElement()).outerWidth();
             this._charWidth = this._editor.defaultCharWidth();
         },
         // Public methods
         // ----------------------------------------
         addAnnotation: function(start, end, options) {
+            if (typeof options !== 'object') options = { };
             if (start == undefined || length == undefined)
                 throw 'Start and end offsets must be provided for \'addAnnotation\'.';
             if (typeof start == 'number') start = this._editor.posFromIndex(start);
             if (typeof end   == 'number') end   = this._editor.posFromIndex(end);
+            var anno = new Annotation({
+                id: this._annoId++,
+                start: this._editor.indexFromPos(start),
+                end: this._editor.indexFromPos(end),
+                text: this._editor.getRange(start, end),
+                data: options.data
+            });
+            this._annotations.push(anno);
             // Single line annotation scenario
             if (start.line == end.line) {
                 var widget = this._createLineWidget(start.line);
@@ -54,6 +77,7 @@
                     }
                 }
             }
+            return anno;
         },
         editor: function() { return this._editor; },
         destroy: function() { 
@@ -82,8 +106,8 @@
         },
         _getAnnoPixelPos: function(lineNo, fromCh, toCh) {
             var pos = {
-                left:  this._editor.cursorCoords({ line: lineNo, ch: fromCh }).left - this._gutterWidth,
-                right: this._editor.cursorCoords({ line: lineNo, ch: toCh   }).left - this._gutterWidth
+                left:  this._editor.cursorCoords({ line: lineNo, ch: fromCh }).left - this._gutterWidth - this._charWidth,
+                right: this._editor.cursorCoords({ line: lineNo, ch: toCh   }).left - this._gutterWidth - this._charWidth
             };
             pos.width = pos.right - pos.left;
             return pos;

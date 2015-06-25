@@ -12,11 +12,19 @@
         <script type="text/javascript">
             $(document).ready(function() {
                 var $anno = $('textarea').annoMirror();
-                // Standard annotation
+                var editor = $anno.annoMirror('editor');
+                // Standard int-based annotation
                 $anno.annoMirror('addAnnotation', 0, 19);
-                // Short annotation with long text
+                // Short int-based annotation with long text
                 $anno.annoMirror('addAnnotation', 20, 22);
-                $anno.annoMirror('editor').setSelection({ line: 0, ch: 0 }, { line: 0, ch: 19 });
+                // Multi-line int-based annotation
+                $anno.annoMirror('addAnnotation', 200, 300);
+                // Ensure codemirror selection match the annotations
+                $anno.annoMirror('editor').setSelections([
+                    { anchor: editor.posFromIndex(0),   head: editor.posFromIndex(19)  },
+                    { anchor: editor.posFromIndex(20),  head: editor.posFromIndex(22)  },
+                    { anchor: editor.posFromIndex(200), head: editor.posFromIndex(300) }
+                ]);
             });
         </script>
     </head>
