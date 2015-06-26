@@ -23,6 +23,7 @@
         this.end = options.end;
         this.text = options.text || '';
         this.data = options.data || { };
+        this.$els = options.$els || [];
         if (this.id == -1)           throw "Annotation.constructor requires an id parameter."
         if (this.start == undefined) throw "Annotation.constructor requires a start parameter.";
         if (this.end == undefined)   throw "Annotation.constructor requires a end parameter.";
@@ -52,31 +53,33 @@
                 throw 'Start and end offsets must be provided for \'addAnnotation\'.';
             if (typeof start == 'number') start = this._editor.posFromIndex(start);
             if (typeof end   == 'number') end   = this._editor.posFromIndex(end);
-            var anno = new Annotation({
-                id: this._annoId++,
-                start: this._editor.indexFromPos(start),
-                end: this._editor.indexFromPos(end),
-                text: this._editor.getRange(start, end),
-                data: options.data
-            });
-            this._annotations.push(anno);
+            var $els = [];
             // Single line annotation scenario
             if (start.line == end.line) {
                 var widget = this._createLineWidget(start.line);
-                this._createAnnotation(widget, start.ch, end.ch, { });
+                $els.push(this._createAnnotation(widget, start.ch, end.ch, { }));
             // Multi-line annotation scenario
             } else {
                 for (var i = start.line; i <= end.line; i++) {
                     var widget = this._createLineWidget(i);
                     if (i == start.line) {
-                        this._createAnnotation(widget, start.ch, widget.line.text.length, { });
+                        $els.push(this._createAnnotation(widget, start.ch, widget.line.text.length, { }));
                     } else if (i != start.line && i != end.line) {
-                        this._createAnnotation(widget, 0, widget.line.text.length, { });
+                        $els.push(this._createAnnotation(widget, 0, widget.line.text.length, { }));
                     } else {
-                        this._createAnnotation(widget, 0, end.ch, { });
+                        $els.push(this._createAnnotation(widget, 0, end.ch, { }));
                     }
                 }
             }
+            var anno = new Annotation({
+                id: this._annoId++,
+                start: this._editor.indexFromPos(start),
+                end: this._editor.indexFromPos(end),
+                text: this._editor.getRange(start, end),
+                $els: $els,
+                data: options.data
+            });
+            this._annotations.push(anno);
             return anno;
         },
         editor: function() { return this._editor; },
@@ -95,6 +98,7 @@
                 '</div>'
             ].join('')).css({ left: pxPos.left, width: pxPos.width });
             $(widget.node).append($anno);
+            $anno.data('widget', widget);
             // Center the text if needed.
             var textWidth = $('.text', $anno).outerWidth();
             var indWidth = $anno.outerWidth();
