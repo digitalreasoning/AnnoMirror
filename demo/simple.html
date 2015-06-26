@@ -2,8 +2,8 @@
 <html lang="en">
     <head>
         <title>AnnoMirror Demo</title>
-        <link rel="stylesheet" text="text/css" href="../css/annomirror.css">
         <link rel="stylesheet" text="text/css" href="../bower_components/codemirror/lib/codemirror.css">
+        <link rel="stylesheet" text="text/css" href="../css/annomirror.css">
 
         <script type="text/javascript" src="../bower_components/jquery/dist/jquery.min.js"></script>
         <script type="text/javascript" src="../bower_components/codemirror/lib/codemirror.js"></script>
@@ -18,13 +18,18 @@
                 // Short int-based annotation with long text
                 $anno.annoMirror('addAnnotation', 20, 22);
                 // Multi-line int-based annotation
-                $anno.annoMirror('addAnnotation', 200, 300);
+                $anno.annoMirror('addAnnotation', 200, 300, { title: 'TEST', color: '#F00' });
+                var toBeRemoved = $anno.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });
                 // Ensure codemirror selection match the annotations
                 $anno.annoMirror('editor').setSelections([
                     { anchor: editor.posFromIndex(0),   head: editor.posFromIndex(19)  },
                     { anchor: editor.posFromIndex(20),  head: editor.posFromIndex(22)  },
-                    { anchor: editor.posFromIndex(200), head: editor.posFromIndex(300) }
+                    { anchor: editor.posFromIndex(200), head: editor.posFromIndex(300) },
+                    { anchor: { line: 2, ch: 10 },      head: { line: 3, ch: 10 }      }
                 ]);
+                setTimeout(function() {
+                    $anno.annoMirror('removeAnnotation', toBeRemoved);
+                }, 1000);
             });
         </script>
     </head>

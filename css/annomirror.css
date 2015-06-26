@@ -1,3 +1,6 @@
+.CodeMirror-linewidget {
+    overflow: visible;
+}
 .anno-line-widget {
     position: relative;
     cursor: default;

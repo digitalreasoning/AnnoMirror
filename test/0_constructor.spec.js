@@ -31,7 +31,7 @@ describe('AnnoMirror.constructor', function() {
         $el.annoMirror({
             thisIsNotATrueOption: true
         });
-        expect($.data($el.get(0), 'plugin_annoMirror')._settings).toEqual(jasmine.objectContaining({
+        expect($el.data('plugin_annoMirror')._settings).toEqual(jasmine.objectContaining({
             thisIsNotATrueOption: true
         }));
     });
@@ -56,7 +56,7 @@ describe('AnnoMirror.editor', function() {
     });
 
     it('exists', function() {
-        expect(typeof $.data($el.get(0), 'plugin_annoMirror').editor).toEqual('function');
+        expect(typeof $el.data('plugin_annoMirror').editor).toEqual('function');
     });
     it('returns a CodeMirror editor instance', function() {
         expect($el.annoMirror('editor')).toBeDefined();
@@ -73,11 +73,11 @@ describe('AnnoMirror.destroy', function() {
     });
 
     it('exists', function() {
-        expect(typeof $.data($el.get(0), 'plugin_annoMirror').destroy).toEqual('function');
+        expect(typeof $el.data('plugin_annoMirror').destroy).toEqual('function');
     });
     it('removes the AnnoMirror instance', function() {
         $el.annoMirror('destroy');
         expect($('.CodeMirror').length).toBe(0);
-        expect($.data($el[0], 'plugin_annoMirror')).toEqual(null);
+        expect($el.data('plugin_annoMirror')).toEqual(null);
     });
 });

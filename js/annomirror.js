@@ -22,6 +22,8 @@
         this.start = options.start;
         this.end = options.end;
         this.text = options.text || '';
+        this.title = options.title || this.id;
+        this.color = options.color || '#333';
         this.data = options.data || { };
         this.$els = options.$els || [];
         if (this.id == -1)           throw "Annotation.constructor requires an id parameter."
@@ -53,33 +55,52 @@
                 throw 'Start and end offsets must be provided for \'addAnnotation\'.';
             if (typeof start == 'number') start = this._editor.posFromIndex(start);
             if (typeof end   == 'number') end   = this._editor.posFromIndex(end);
+            var anno = new Annotation({
+                id: this._annoId++,
+                start: this._editor.indexFromPos(start),
+                end: this._editor.indexFromPos(end),
+                title: options.title,
+                color: options.color,
+                text: this._editor.getRange(start, end),
+                data: options.data
+            });
             var $els = [];
             // Single line annotation scenario
             if (start.line == end.line) {
                 var widget = this._createLineWidget(start.line);
-                $els.push(this._createAnnotation(widget, start.ch, end.ch, { }));
+                $els.push(this._displayAnnotation(anno, widget, start.ch, end.ch));
             // Multi-line annotation scenario
             } else {
                 for (var i = start.line; i <= end.line; i++) {
                     var widget = this._createLineWidget(i);
                     if (i == start.line) {
-                        $els.push(this._createAnnotation(widget, start.ch, widget.line.text.length, { }));
+                        $els.push(this._displayAnnotation(anno, widget, start.ch, widget.line.text.length, false, true));
                     } else if (i != start.line && i != end.line) {
-                        $els.push(this._createAnnotation(widget, 0, widget.line.text.length, { }));
+                        $els.push(this._displayAnnotation(anno, widget, 0, widget.line.text.length, true, true));
                     } else {
-                        $els.push(this._createAnnotation(widget, 0, end.ch, { }));
+                        $els.push(this._displayAnnotation(anno, widget, 0, end.ch, true, false));
                     }
                 }
             }
-            var anno = new Annotation({
-                id: this._annoId++,
-                start: this._editor.indexFromPos(start),
-                end: this._editor.indexFromPos(end),
-                text: this._editor.getRange(start, end),
-                $els: $els,
-                data: options.data
-            });
+            anno.$els = $els;
+            $.each($els, function() { this.data('annotation', anno); });
             this._annotations.push(anno);
+            return anno;
+        },
+        removeAnnotation: function(annoOrId) {
+            if (!annoOrId) throw "An annotation instance or id must be provided to 'removeAnnotation'.";
+            var idx;
+            if (typeof annoOrId == 'number') {
+                for (var i = 0; i < this._annotations.length; i++)
+                    if (this._annotations[i].id === annoOrId) {
+                        idx = i; break;
+                    }
+            } else
+                idx = this._annotations.indexOf(annoOrId);
+            if (idx == undefined || idx == -1)
+                return false;
+            var anno = this._annotations.splice(idx, 1)[0];
+            $.each(anno.$els, function() { this.remove(); });
             return anno;
         },
         editor: function() { return this._editor; },
@@ -89,12 +110,12 @@
         },
         // Private methods
         // ----------------------------------------
-        _createAnnotation: function(widget, fromCh, toCh, options) {
+        _displayAnnotation: function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
             var pxPos = this._getAnnoPixelPos(widget.line.lineNo(), fromCh, toCh);
             var $anno = $([
                 '<div class="annotation">',
-                    '<span class="text">ABCD</span>',
-                    '<div class="indicator" style="background-color: #333"></div>',
+                    '<span class="text">', anno.title, '</span>',
+                    '<div class="indicator" style="background-color: ', anno.color, '"></div>',
                 '</div>'
             ].join('')).css({ left: pxPos.left, width: pxPos.width });
             $(widget.node).append($anno);
@@ -107,6 +128,12 @@
                 $anno.width(textWidth);
                 $anno.css('left', '-=' + (textWidth / 2 - indWidth / 2));
             }
+            // Add the multi-line arrows as needed.
+            if (leftArrow === true) 
+                $anno.append('<div class="arrow left" style="border-color: ' + anno.color + '"></div>');
+            if (rightArrow === true) 
+                $anno.append('<div class="arrow right" style="border-color: ' + anno.color + '"></div>');
+            return $anno;
         },
         _getAnnoPixelPos: function(lineNo, fromCh, toCh) {
             var pos = {
