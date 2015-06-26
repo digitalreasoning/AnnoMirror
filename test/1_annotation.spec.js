@@ -19,7 +19,7 @@ describe('AnnoMirror.addAnnotation', function() {
     });
     it('returns an Annotation instance', function() {
         var anno = $el.annoMirror('addAnnotation', 0, 19);
-        expect(typeof anno.annotationDummyFn).toEqual('function');
+        expect(typeof anno.update).toEqual('function');
     });
     it('Annotation instance has the proper fields set', function() {
         var anno = $el.annoMirror('addAnnotation', 0, 19);
@@ -110,6 +110,52 @@ describe('AnnoMirror.removeAnnotation', function() {
         $el.annoMirror('removeAnnotation', anno.id);
         expect($('.annotation').length).toEqual(0);
         expect($el.data('plugin_annoMirror')._annotations.length).toEqual(0);
+    });
+});
+
+describe('AnnoMirror.editAnnotation', function() {
+    var $el, singleAnno, multiAnno;
+    beforeEach(function() {
+        loadFixtures('textarea.html');
+        $el = $('textarea');
+        $el.annoMirror();
+        singleAnno = $el.annoMirror('addAnnotation', 0, 19);
+        multiAnno = $el.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });
+    });
+
+    it('exists', function() {
+        expect(typeof $el.data('plugin_annoMirror').editAnnotation).toEqual('function');
+    });
+    it('throws an error if no annotation is provided', function() {
+        var error;
+        try { $el.annoMirror('editAnnotation'); }
+        catch (err) { error = err; }
+        expect(error.substring(0, 30)).toEqual('An annotation instance must be');
+    });
+    it('can alter a single-line annotation\'s title and color', function() {
+        $el.annoMirror('editAnnotation', singleAnno, {
+            title: 'test', color: '#F00'
+        });
+        expect(singleAnno.title).toEqual('test');
+        expect(singleAnno.color).toEqual('#F00');
+        expect($('.text', singleAnno.$els[0]).text()).toEqual('test');
+        expect($('.indicator', singleAnno.$els[0]).css('backgroundColor')).toEqual('rgb(255, 0, 0)');
+    });
+    it('can alter a multi-line annotation\'s title and color', function() {
+        $el.annoMirror('editAnnotation', multiAnno, {
+            title: 'test', color: '#F00'
+        });
+        expect(multiAnno.title).toEqual('test');
+        expect(multiAnno.color).toEqual('#F00');
+        expect($('.text', multiAnno.$els[1]).text()).toEqual('test');
+        expect($('.indicator', multiAnno.$els[1]).css('backgroundColor')).toEqual('rgb(255, 0, 0)');
+        expect($('.arrow', multiAnno.$els[1]).css('borderTopColor')).toEqual('rgb(255, 0, 0)');
+    });
+    it('can alter an annotation\'s data', function() {
+        $el.annoMirror('editAnnotation', singleAnno, {
+            data: { computer: 'blue' }
+        });
+        expect(singleAnno.data).toEqual(jasmine.objectContaining({ computer: 'blue' }));
     });
 });
 

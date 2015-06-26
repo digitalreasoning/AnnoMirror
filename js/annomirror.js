@@ -30,7 +30,11 @@
         if (this.start == undefined) throw "Annotation.constructor requires a start parameter.";
         if (this.end == undefined)   throw "Annotation.constructor requires a end parameter.";
     };
-    Annotation.prototype.annotationDummyFn = function() { };
+    Annotation.prototype.update = function(options) { 
+        this.title = options.title || this.title; 
+        this.color = options.color || this.color;
+        this.data  = options.data  || this.data;
+    };
 
     var Plugin = function(element, options) {
         this.$el = $(element);
@@ -56,7 +60,7 @@
             if (typeof start == 'number') start = this._editor.posFromIndex(start);
             if (typeof end   == 'number') end   = this._editor.posFromIndex(end);
             var anno = new Annotation({
-                id: this._annoId++,
+                id: options.id || this._annoId++,
                 start: this._editor.indexFromPos(start),
                 end: this._editor.indexFromPos(end),
                 title: options.title,
@@ -86,6 +90,17 @@
             $.each($els, function() { this.data('annotation', anno); });
             this._annotations.push(anno);
             return anno;
+        },
+        editAnnotation: function(anno, options) {
+            if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";
+            // Update the annotation properties.
+            anno.update(options);
+            // Update the annotation elements
+            $.each(anno.$els, function() {
+                $('.text', this).text(anno.title);
+                $('.indicator', this).css('backgroundColor', anno.color);
+                $('.arrow', this).css('borderColor', anno.color);
+            });
         },
         removeAnnotation: function(annoOrId) {
             if (!annoOrId) throw "An annotation instance or id must be provided to 'removeAnnotation'.";
