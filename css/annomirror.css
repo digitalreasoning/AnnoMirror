@@ -29,9 +29,9 @@
 }
 .anno-line-widget .annotation .arrow.left {
     border-right: 6px solid #333;
-    left: -5px;
+    left: -2px;
 }
 .anno-line-widget .annotation .arrow.right {
     border-left: 6px solid #333;
-    right: -5px;
+    right: -2px;
 }

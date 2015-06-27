@@ -34,32 +34,12 @@
                     editor.setSelection({ line: 0, ch: 0 });
                 });
                 $('#remove-anno').click(function() {
+                    var annos = $anno.annoMirror('getAnnotations');
 
                 });
                 $('#edit-anno').click(function() {
 
                 });
-                // // Standard int-based annotation
-                // $anno.annoMirror('addAnnotation', 0, 19);
-                // // Short int-based annotation with long text
-                // $anno.annoMirror('addAnnotation', 20, 22);
-                // // Multi-line int-based annotation
-                // var edittableAnno = $anno.annoMirror('addAnnotation', 200, 300, { title: 'TEST', color: '#F00' });
-                // var toBeRemoved = $anno.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });
-                // // Ensure codemirror selection match the annotations
-                // $anno.annoMirror('editor').setSelections([
-                //     { anchor: editor.posFromIndex(0),   head: editor.posFromIndex(19)  },
-                //     { anchor: editor.posFromIndex(20),  head: editor.posFromIndex(22)  },
-                //     { anchor: editor.posFromIndex(200), head: editor.posFromIndex(300) },
-                //     { anchor: { line: 2, ch: 10 },      head: { line: 3, ch: 10 }      }
-                // ]);
-                // setTimeout(function() {
-                //     $anno.annoMirror('removeAnnotation', toBeRemoved);
-                //     $anno.annoMirror('editAnnotation', edittableAnno, {
-                //         title: 'EDITTED',
-                //         color: '#0F0'
-                //     });
-                // }, 1000);
             });
         </script>
     </head>

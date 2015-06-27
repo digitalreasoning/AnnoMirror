@@ -1,11 +1,18 @@
 jasmine.getFixtures().fixturesPath = 'test/fixtures';
+jasmine.getStyleFixtures().fixturesPath = './';
+
+var loadTextareaFixture = function() {
+    loadFixtures('textarea.html');
+    loadStyleFixtures('bower_components/codemirror/lib/codemirror.css', 
+                      'css/annomirror.css');
+    return $('textarea').annoMirror();
+};
 
 describe('AnnoMirror.addAnnotation', function() {
-    var $el;
-    beforeEach(function() {
-        loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+    var $el, editor;
+    beforeEach(function() { 
+        $el = loadTextareaFixture(); 
+        editor = $el.annoMirror('editor');
     });
 
     it('exists', function() {
@@ -82,62 +89,65 @@ describe('AnnoMirror.addAnnotation', function() {
         }));
     });
 
-    describe('annotation overlapping logic', function() {
+    describe('interweave logic', function() {
+        var lineHandle2;
+        beforeEach(function() {
+            lineHandle2 = editor.getLineHandle(2);
+        });
+
         it('allows non-overlapping annotations to align vertically', function() {
             var anno1 = $el.annoMirror('addAnnotation', 47, 70);
             var anno2 = $el.annoMirror('addAnnotation', 71, 88);
-            expect($('.anno-line-widget').length).toEqual(1);
-            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno2.$els[0].data().widget.insertAt).toEqual(0);
+            expect(lineHandle2.widgets.length).toEqual(1);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
         it('left side overlap creates a new line', function() {
             var anno1 = $el.annoMirror('addAnnotation', 43, 59);
             var anno2 = $el.annoMirror('addAnnotation', 56, 70);
-            expect($('.anno-line-widget').length).toEqual(2);
-            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
         it('right side overlap creates a new line', function() {
             var anno1 = $el.annoMirror('addAnnotation', 56, 70);
             var anno2 = $el.annoMirror('addAnnotation', 43, 59);
-            expect($('.anno-line-widget').length).toEqual(2);
-            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
         it('subset annotation creates a new line', function() {
             var anno1 = $el.annoMirror('addAnnotation', 56, 81);
             var anno2 = $el.annoMirror('addAnnotation', 65, 73);
-            expect($('.anno-line-widget').length).toEqual(2);
-            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
         it('superset annotation creates a new line', function() {
             var anno1 = $el.annoMirror('addAnnotation', 43, 59);
             var anno2 = $el.annoMirror('addAnnotation', 60, 73);
             var anno3 = $el.annoMirror('addAnnotation', 39, 81);
-            expect($('.anno-line-widget').length).toEqual(2);
-            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno2.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno3.$els[0].data().widget.insertAt).toEqual(1);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno3.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
         it('newer annotations prefer lower lines', function() {
             var anno1 = $el.annoMirror('addAnnotation', 39, 59);
             var anno2 = $el.annoMirror('addAnnotation', 33, 64);
             var anno3 = $el.annoMirror('addAnnotation', 65, 73);
-            expect($('.anno-line-widget').length).toEqual(2);
-            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
-            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
-            expect(anno3.$els[0].data().widget.insertAt).toEqual(0);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
+            expect(anno3.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
     });
 });
 
 describe('AnnoMirror.removeAnnotation', function() {
     var $el, anno;
-    beforeEach(function() {
-        loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+    beforeEach(function() { 
+        $el = loadTextareaFixture(); 
         anno = $el.annoMirror('addAnnotation', 0, 19);
     });
 
@@ -162,12 +172,43 @@ describe('AnnoMirror.removeAnnotation', function() {
     });
 });
 
+describe('AnnoMirror.getAnnotations', function() {
+    var $el;
+    beforeEach(function() {
+        $el = loadTextareaFixture();
+    });
+
+    it('exists', function() {
+        expect(typeof $el.data('plugin_annoMirror').getAnnotations).toEqual('function');
+    });
+    it('returns an empty array if there are no annotations', function() {
+        expect($el.annoMirror('getAnnotations')).toEqual([]);
+    });
+    it('returns annotations', function() {
+        var anno1 = $el.annoMirror('addAnnotation', 39, 59);
+        var annos = $el.annoMirror('getAnnotations');
+        expect(annos.length).toEqual(1);
+        var anno2 = $el.annoMirror('addAnnotation', 33, 64);
+        var anno3 = $el.annoMirror('addAnnotation', 65, 73);
+        annos = $el.annoMirror('getAnnotations');
+        expect(annos.length).toEqual(3);
+    });
+    it('returns the proper amount after removing annotations', function() {
+        var anno1 = $el.annoMirror('addAnnotation', 39, 59);
+        var annos = $el.annoMirror('getAnnotations');
+        expect(annos.length).toEqual(1);
+        var anno2 = $el.annoMirror('addAnnotation', 33, 64);
+        var anno3 = $el.annoMirror('addAnnotation', 65, 73);
+        $el.annoMirror('removeAnnotation', anno3);
+        var annos = $el.annoMirror('getAnnotations');
+        expect(annos.length).toEqual(2);
+    });
+});
+
 describe('AnnoMirror.editAnnotation', function() {
     var $el, singleAnno, multiAnno;
-    beforeEach(function() {
-        loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+    beforeEach(function() { 
+        $el = loadTextareaFixture(); 
         singleAnno = $el.annoMirror('addAnnotation', 0, 19);
         multiAnno = $el.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });
     });
@@ -197,8 +238,10 @@ describe('AnnoMirror.editAnnotation', function() {
         expect(multiAnno.title).toEqual('test');
         expect(multiAnno.color).toEqual('#F00');
         expect($('.text', multiAnno.$els[1]).text()).toEqual('test');
-        expect($('.indicator', multiAnno.$els[1]).css('backgroundColor')).toEqual('rgb(255, 0, 0)');
-        expect($('.arrow', multiAnno.$els[1]).css('borderTopColor')).toEqual('rgb(255, 0, 0)');
+        expect($('.indicator', multiAnno.$els[1]).css('backgroundColor'))
+              .toEqual('rgb(255, 0, 0)');
+        expect($('.arrow', multiAnno.$els[1]).css('borderLeftColor'))
+              .toEqual('rgb(255, 0, 0)');
     });
     it('can alter an annotation\'s data', function() {
         $el.annoMirror('editAnnotation', singleAnno, {
@@ -210,10 +253,8 @@ describe('AnnoMirror.editAnnotation', function() {
 
 describe('Annotation anatomy', function() {
     var $el, editor, singleAnno, multiAnno;
-    beforeEach(function() {
-        loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+    beforeEach(function() { 
+        $el = loadTextareaFixture(); 
         editor = $el.annoMirror('editor');
         singleAnno = $el.annoMirror('addAnnotation', { line: 0, ch: 0 }, { line: 0, ch: 19 });
         multiAnno = $el.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });

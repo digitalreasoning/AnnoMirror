@@ -98,6 +98,9 @@
             this._annotations.push(anno);
             return anno;
         },
+        getAnnotations: function() {
+            return this._annotations || [];
+        },
         editAnnotation: function(anno, options) {
             if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";
             // Update the annotation properties.
@@ -152,9 +155,9 @@
             }
             // Add the multi-line arrows as needed.
             if (leftArrow === true) 
-                $anno.append('<div class="arrow left" style="border-color: ' + anno.color + '"></div>');
+                $('.indicator', $anno).append('<div class="arrow left" style="border-color: ' + anno.color + '"></div>');
             if (rightArrow === true) 
-                $anno.append('<div class="arrow right" style="border-color: ' + anno.color + '"></div>');
+                $('.indicator', $anno).append('<div class="arrow right" style="border-color: ' + anno.color + '"></div>');
             return $anno;
         },
         _getAnnoPixelPos: function(lineNo, fromCh, toCh) {
