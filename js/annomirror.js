@@ -35,6 +35,17 @@
         this.color = options.color || this.color;
         this.data  = options.data  || this.data;
     };
+    Annotation.prototype.toHash = function() {
+        return {
+            id: this.id,
+            start: this.start,
+            end: this.end,
+            color: this.color,
+            title: this.title,
+            text: this.text,
+            data: $.extend(true, { }, this.data)
+        };
+    };
 
     var Plugin = function(element, options) {
         this.$el = $(element);
@@ -99,7 +110,9 @@
             return anno;
         },
         getAnnotations: function() {
-            return this._annotations || [];
+            return $.map(this._annotations, function(anno) {
+                return anno.toHash();
+            });
         },
         editAnnotation: function(anno, options) {
             if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";

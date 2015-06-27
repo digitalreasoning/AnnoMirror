@@ -193,6 +193,35 @@ describe('AnnoMirror.getAnnotations', function() {
         annos = $el.annoMirror('getAnnotations');
         expect(annos.length).toEqual(3);
     });
+    it('returns the proper values for an annotation', function() {
+        var anno1 = $el.annoMirror('addAnnotation', 39, 59, {
+            title: 'testing',
+            color: '#345678',
+            data: { test: true }
+        });
+        var annos = $el.annoMirror('getAnnotations');
+        expect(annos[0]).toEqual(jasmine.objectContaining({
+            id: 1, 
+            start: 39,
+            end: 59,
+            color: '#345678',
+            title: 'testing',
+            text: 'was beginning to get',
+            data: { test: true }
+        }));
+    });
+    it('manipulating the array won\'t affect the real annotations', function() {
+        var anno1 = $el.annoMirror('addAnnotation', 39, 59);
+        var anno2 = $el.annoMirror('addAnnotation', 33, 64);
+        var anno3 = $el.annoMirror('addAnnotation', 65, 73);
+        var annos = $el.annoMirror('getAnnotations');
+        annos[0].title = 'i should not be able to change this';
+        annos.pop();
+        annos.pop();
+        var newAnnos = $el.annoMirror('getAnnotations');
+        expect(newAnnos[0].title).toEqual(newAnnos[0].id);
+        expect(newAnnos.length).toEqual(3);
+    });
     it('returns the proper amount after removing annotations', function() {
         var anno1 = $el.annoMirror('addAnnotation', 39, 59);
         var annos = $el.annoMirror('getAnnotations');
