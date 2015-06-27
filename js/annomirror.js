@@ -71,19 +71,26 @@
             var $els = [];
             // Single line annotation scenario
             if (start.line == end.line) {
-                var widget = this._createLineWidget(start.line);
-                $els.push(this._displayAnnotation(anno, widget, start.ch, end.ch));
+                var widget = this._getOrCreateLineWidget(start.line, start.ch, end.ch);
+                var $anno = this._displayAnnotation(anno, widget, start.ch, end.ch);
+                if ($anno) $els.push($anno);
             // Multi-line annotation scenario
             } else {
                 for (var i = start.line; i <= end.line; i++) {
-                    var widget = this._createLineWidget(i);
+                    var lineHandle = this._editor.getLineHandle(i);
+                    if (lineHandle.text == '') continue;
+                    var $anno;
                     if (i == start.line) {
-                        $els.push(this._displayAnnotation(anno, widget, start.ch, widget.line.text.length, false, true));
+                        var widget = this._getOrCreateLineWidget(i, start.ch, lineHandle.text.length);
+                        $anno = this._displayAnnotation(anno, widget, start.ch, lineHandle.text.length, false, true);
                     } else if (i != start.line && i != end.line) {
-                        $els.push(this._displayAnnotation(anno, widget, 0, widget.line.text.length, true, true));
+                        var widget = this._getOrCreateLineWidget(i, 0, lineHandle.text.length);
+                        $anno = this._displayAnnotation(anno, widget, 0, lineHandle.text.length, true, true);
                     } else {
-                        $els.push(this._displayAnnotation(anno, widget, 0, end.ch, true, false));
+                        var widget = this._getOrCreateLineWidget(i, 0, end.ch);
+                        $anno = this._displayAnnotation(anno, widget, 0, end.ch, true, false);
                     }
+                    if ($anno) $els.push($anno);
                 }
             }
             anno.$els = $els;
@@ -158,11 +165,49 @@
             pos.width = pos.right - pos.left;
             return pos;
         },
-        _createLineWidget: function(line) {
-            return this._editor.addLineWidget(line, $('<div class="anno-line-widget">&nbsp;</div>').get(0), {
-                above: true,
-                insertAt: 0
-            });
+        _getOrCreateLineWidget: function(line, fromCh, toCh) {
+            var widget = false;
+            var lineHandle = this._editor.getLineHandle(line);
+            var widgets = lineHandle.widgets || [];
+            for (var i = 0; i < widgets.length; i++) {
+                var aWidget = widgets[i];
+                var didIntersect = false;
+                var nodes = $('.annotation', aWidget.node);
+                for (var j = 0; j < nodes.length; j++) {
+                    var $label = $(nodes[j]);
+                    var newPos = this._getAnnoPos(lineHandle.lineNo(), fromCh, toCh);
+                    var labelPos = $label.position();
+                    labelPos.width = $label.outerWidth();
+                    labelPos.right = labelPos.left + labelPos.width;
+                    // Checks if the "from" and "to" fall within another label.
+                    var fromIntersect = labelPos.left <= newPos.left && newPos.left <= labelPos.right;
+                    var toIntersect   = labelPos.left <= newPos.right && newPos.right <= labelPos.right;
+                    // Checks if the new labeltation "wraps" other labels.
+                    var subsetIntersect = (newPos.left <= labelPos.left && labelPos.right <= newPos.right) ||
+                                        (newPos.left <= labelPos.left && labelPos.right <= newPos.right)
+                    // If the "to" or "from" of the new label lies inside
+                    // another label then we don't want to use this lineWidget.
+                    if (fromIntersect || toIntersect || subsetIntersect) {
+                        didIntersect = true; break;
+                    }
+                }
+                if (!didIntersect) { widget = aWidget; break; }
+            }
+            if (!widget)
+                return this._editor.addLineWidget(line, $('<div class="anno-line-widget">&nbsp;</div>').get(0), {
+                    above: true,
+                    insertAt: 0
+                });
+            return widget;
+        },
+        _getAnnoPos: function(line, fromCh, toCh) {
+            var pos = {
+                left: this._editor.cursorCoords({ line: line, ch: fromCh }).left - this._gutterWidth,
+                width: this._editor.cursorCoords({ line: line, ch: toCh }).left - 
+                       this._editor.cursorCoords({ line: line, ch: fromCh }).left
+            };
+            pos.right = pos.left + pos.width;
+            return pos;
         }
     });
 

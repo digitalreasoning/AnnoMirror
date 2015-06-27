@@ -37,8 +37,8 @@ describe('AnnoMirror.addAnnotation', function() {
     });
     it('can create an int-based multi-line annotation', function() {
         var anno = $el.annoMirror('addAnnotation', 0, 60);
-        expect($('.anno-line-widget').length).toEqual(3);
-        expect($('.anno-line-widget .annotation').length).toEqual(3);
+        expect($('.anno-line-widget').length).toEqual(2);
+        expect($('.anno-line-widget .annotation').length).toEqual(2);
         expect(anno.start).toEqual(0);
         expect(anno.end).toEqual(60);
     });
@@ -80,6 +80,55 @@ describe('AnnoMirror.addAnnotation', function() {
             test: true,
             abc: 'data'
         }));
+    });
+
+    describe('annotation overlapping logic', function() {
+        it('allows non-overlapping annotations to align vertically', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 47, 70);
+            var anno2 = $el.annoMirror('addAnnotation', 71, 88);
+            expect($('.anno-line-widget').length).toEqual(1);
+            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno2.$els[0].data().widget.insertAt).toEqual(0);
+        });
+        it('left side overlap creates a new line', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 43, 59);
+            var anno2 = $el.annoMirror('addAnnotation', 56, 70);
+            expect($('.anno-line-widget').length).toEqual(2);
+            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+        });
+        it('right side overlap creates a new line', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 56, 70);
+            var anno2 = $el.annoMirror('addAnnotation', 43, 59);
+            expect($('.anno-line-widget').length).toEqual(2);
+            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+        });
+        it('subset annotation creates a new line', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 56, 81);
+            var anno2 = $el.annoMirror('addAnnotation', 65, 73);
+            expect($('.anno-line-widget').length).toEqual(2);
+            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+        });
+        it('superset annotation creates a new line', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 43, 59);
+            var anno2 = $el.annoMirror('addAnnotation', 60, 73);
+            var anno3 = $el.annoMirror('addAnnotation', 39, 81);
+            expect($('.anno-line-widget').length).toEqual(2);
+            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno2.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno3.$els[0].data().widget.insertAt).toEqual(1);
+        });
+        it('newer annotations prefer lower lines', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 39, 59);
+            var anno2 = $el.annoMirror('addAnnotation', 33, 64);
+            var anno3 = $el.annoMirror('addAnnotation', 65, 73);
+            expect($('.anno-line-widget').length).toEqual(2);
+            expect(anno1.$els[0].data().widget.insertAt).toEqual(0);
+            expect(anno2.$els[0].data().widget.insertAt).toEqual(1);
+            expect(anno3.$els[0].data().widget.insertAt).toEqual(0);
+        });
     });
 });
 

@@ -13,29 +13,61 @@
             $(document).ready(function() {
                 var $anno = $('textarea').annoMirror();
                 var editor = $anno.annoMirror('editor');
-                // Standard int-based annotation
-                $anno.annoMirror('addAnnotation', 0, 19);
-                // Short int-based annotation with long text
-                $anno.annoMirror('addAnnotation', 20, 22);
-                // Multi-line int-based annotation
-                $anno.annoMirror('addAnnotation', 200, 300, { title: 'TEST', color: '#F00' });
-                var toBeRemoved = $anno.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });
-                // Ensure codemirror selection match the annotations
-                $anno.annoMirror('editor').setSelections([
-                    { anchor: editor.posFromIndex(0),   head: editor.posFromIndex(19)  },
-                    { anchor: editor.posFromIndex(20),  head: editor.posFromIndex(22)  },
-                    { anchor: editor.posFromIndex(200), head: editor.posFromIndex(300) },
-                    { anchor: { line: 2, ch: 10 },      head: { line: 3, ch: 10 }      }
-                ]);
-                setTimeout(function() {
-                    $anno.annoMirror('removeAnnotation', toBeRemoved);
-                }, 1000);
+                editor.setSize(null, 500);
+
+                $('#add-anno').click(function() {
+                    var color = '#'+Math.floor(Math.random()*16777215).toString(16);
+                    if (editor.somethingSelected()) {
+                        var startPos = editor.getCursor('from')
+                        var endPos = editor.getCursor('to')
+                        $anno.annoMirror('addAnnotation', startPos, endPos, { color: color });
+                        console.log("Creating anno at [" + editor.indexFromPos(startPos) + "," +
+                                                           editor.indexFromPos(endPos) + "]");
+                    } else {
+                        var startIdx = Math.floor(Math.random() * $anno.text().length);
+                        var endIdx = Math.min(startIdx + 20, Math.floor(
+                            Math.random() * ($anno.text().length - startIdx + 1) + startIdx
+                        ));
+                        $anno.annoMirror('addAnnotation', startIdx, endIdx, { color: color });
+                        console.log("Creating anno at [" + startIdx + "," + endIdx + "]");
+                    }
+                    editor.setSelection({ line: 0, ch: 0 });
+                });
+                $('#remove-anno').click(function() {
+
+                });
+                $('#edit-anno').click(function() {
+
+                });
+                // // Standard int-based annotation
+                // $anno.annoMirror('addAnnotation', 0, 19);
+                // // Short int-based annotation with long text
+                // $anno.annoMirror('addAnnotation', 20, 22);
+                // // Multi-line int-based annotation
+                // var edittableAnno = $anno.annoMirror('addAnnotation', 200, 300, { title: 'TEST', color: '#F00' });
+                // var toBeRemoved = $anno.annoMirror('addAnnotation', { line: 2, ch: 10 }, { line: 3, ch: 10 });
+                // // Ensure codemirror selection match the annotations
+                // $anno.annoMirror('editor').setSelections([
+                //     { anchor: editor.posFromIndex(0),   head: editor.posFromIndex(19)  },
+                //     { anchor: editor.posFromIndex(20),  head: editor.posFromIndex(22)  },
+                //     { anchor: editor.posFromIndex(200), head: editor.posFromIndex(300) },
+                //     { anchor: { line: 2, ch: 10 },      head: { line: 3, ch: 10 }      }
+                // ]);
+                // setTimeout(function() {
+                //     $anno.annoMirror('removeAnnotation', toBeRemoved);
+                //     $anno.annoMirror('editAnnotation', edittableAnno, {
+                //         title: 'EDITTED',
+                //         color: '#0F0'
+                //     });
+                // }, 1000);
             });
         </script>
     </head>
     <body>
         <div class="actions">
-            <button type="button" id="add-anno">Create Annotation</button>
+            <button type="button" id="add-anno">Add Annotation</button>
+            <button type="button" id="remove-anno">Remove Annotation</button>
+            <button type="button" id="edit-anno">Edit Annotation</button>
         </div>
         <textarea>
 CHAPTER I. Down the Rabbit-Hole
