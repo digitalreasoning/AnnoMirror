@@ -105,6 +105,7 @@
                 }
             }
             anno.$els = $els;
+            this._eventsOnAnno(anno);
             $.each($els, function() { this.data('annotation', anno); });
             this._annotations.push(anno);
             return anno;
@@ -149,7 +150,7 @@
         // Private methods
         // ----------------------------------------
         _displayAnnotation: function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
-            var pxPos = this._getAnnoPixelPos(widget.line.lineNo(), fromCh, toCh);
+            var pxPos = this._getAnnoPos(widget.line.lineNo(), fromCh, toCh);
             var $anno = $([
                 '<div class="annotation">',
                     '<span class="text">', anno.title, '</span>',
@@ -158,6 +159,8 @@
             ].join('')).css({ left: pxPos.left, width: pxPos.width });
             $(widget.node).append($anno);
             $anno.data('widget', widget);
+            $anno.data('fromCh', fromCh);
+            $anno.data('toCh', toCh);
             // Center the text if needed.
             var textWidth = $('.text', $anno).outerWidth();
             var indWidth = $anno.outerWidth();
@@ -173,19 +176,11 @@
                 $('.indicator', $anno).append('<div class="arrow right" style="border-color: ' + anno.color + '"></div>');
             return $anno;
         },
-        _getAnnoPixelPos: function(lineNo, fromCh, toCh) {
-            var pos = {
-                left:  this._editor.cursorCoords({ line: lineNo, ch: fromCh }).left - this._gutterWidth - this._charWidth,
-                right: this._editor.cursorCoords({ line: lineNo, ch: toCh   }).left - this._gutterWidth - this._charWidth
-            };
-            pos.width = pos.right - pos.left;
-            return pos;
-        },
         _getOrCreateLineWidget: function(line, fromCh, toCh) {
             var widget = false;
             var lineHandle = this._editor.getLineHandle(line);
             var widgets = lineHandle.widgets || [];
-            for (var i = 0; i < widgets.length; i++) {
+            for (var i = widgets.length - 1; i >= 0; i--) {
                 var aWidget = widgets[i];
                 var didIntersect = false;
                 var nodes = $('.annotation', aWidget.node);
@@ -196,11 +191,15 @@
                     labelPos.width = $label.outerWidth();
                     labelPos.right = labelPos.left + labelPos.width;
                     // Checks if the "from" and "to" fall within another label.
-                    var fromIntersect = labelPos.left <= newPos.left && newPos.left <= labelPos.right;
-                    var toIntersect   = labelPos.left <= newPos.right && newPos.right <= labelPos.right;
+                    var fromIntersect = parseInt(labelPos.left) < parseInt(newPos.left) && 
+                                        parseInt(newPos.left) < parseInt(labelPos.right);
+                    var toIntersect   = parseInt(labelPos.left) < parseInt(newPos.right) && 
+                                        parseInt(newPos.right) < parseInt(labelPos.right);
                     // Checks if the new labeltation "wraps" other labels.
-                    var subsetIntersect = (newPos.left <= labelPos.left && labelPos.right <= newPos.right) ||
-                                        (newPos.left <= labelPos.left && labelPos.right <= newPos.right)
+                    var subsetIntersect = (parseInt(newPos.left) < parseInt(labelPos.left) && 
+                                           parseInt(labelPos.right) < parseInt(newPos.right)) ||
+                                          (parseInt(newPos.left) < parseInt(labelPos.left) && 
+                                           parseInt(labelPos.right) < parseInt(newPos.right))
                     // If the "to" or "from" of the new label lies inside
                     // another label then we don't want to use this lineWidget.
                     if (fromIntersect || toIntersect || subsetIntersect) {
@@ -218,12 +217,24 @@
         },
         _getAnnoPos: function(line, fromCh, toCh) {
             var pos = {
-                left: this._editor.cursorCoords({ line: line, ch: fromCh }).left - this._gutterWidth,
-                width: this._editor.cursorCoords({ line: line, ch: toCh }).left - 
-                       this._editor.cursorCoords({ line: line, ch: fromCh }).left
+                left:  this._editor.cursorCoords({ line: line, ch: fromCh }).left - this._gutterWidth - this._charWidth,
+                right: this._editor.cursorCoords({ line: line, ch: toCh   }).left - this._gutterWidth - this._charWidth
             };
-            pos.right = pos.left + pos.width;
+            pos.width = pos.right - pos.left;
             return pos;
+        },
+        _eventsOnAnno: function(anno) {
+            var self = this;
+            $.each(anno.$els, function() {
+                var mark;
+                this.hover(function() {
+                    mark = self._editor.markText(self._editor.posFromIndex(anno.start), 
+                                                 self._editor.posFromIndex(anno.end),
+                                                 { className: 'anno-mark-text' }); 
+                }, function() {
+                    if (mark) mark.clear();
+                });
+            });
         }
     });
 

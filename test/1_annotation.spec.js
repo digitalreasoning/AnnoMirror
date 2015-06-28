@@ -95,9 +95,16 @@ describe('AnnoMirror.addAnnotation', function() {
             lineHandle2 = editor.getLineHandle(2);
         });
 
-        it('allows non-overlapping annotations to align vertically', function() {
-            var anno1 = $el.annoMirror('addAnnotation', 47, 70);
-            var anno2 = $el.annoMirror('addAnnotation', 71, 88);
+        it('allows non-overlapping annotations to align vertically (left-side)', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 58, 59);
+            var anno2 = $el.annoMirror('addAnnotation', 57, 58);
+            expect(lineHandle2.widgets.length).toEqual(1);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
+        });
+        it('allows non-overlapping annotations to align vertically (right-side)', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 58, 59);
+            var anno2 = $el.annoMirror('addAnnotation', 59, 60);
             expect(lineHandle2.widgets.length).toEqual(1);
             expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
             expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
@@ -139,7 +146,7 @@ describe('AnnoMirror.addAnnotation', function() {
             expect(lineHandle2.widgets.length).toEqual(2);
             expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
             expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
-            expect(anno3.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
+            expect(anno3.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
         });
     });
 });
@@ -307,6 +314,12 @@ describe('Annotation anatomy', function() {
             expect($('.indicator', singleAnno.$els[0]).width())
                   .toEqual(Math.floor(editor.defaultCharWidth() * singleAnno.text.length));
         });
+        it('marks text when hovered', function() {
+            singleAnno.$els[0].trigger('mouseover');
+            expect(editor.getAllMarks().length).toEqual(1);
+            singleAnno.$els[0].trigger('mouseout');
+            expect(editor.getAllMarks().length).toEqual(0);
+        });
     });
     describe('multi-line annotation', function() {
         it('exists', function() {
@@ -333,6 +346,12 @@ describe('Annotation anatomy', function() {
         it('contains the arrows for line wrapping', function() {
             expect($('.right.arrow', multiAnno.$els[0]).length).toEqual(1);
             expect($('.left.arrow',  multiAnno.$els[1]).length).toEqual(1);
+        });
+        it('marks text when hovered', function() {
+            multiAnno.$els[1].trigger('mouseover');
+            expect(editor.getAllMarks().length).toEqual(1);
+            multiAnno.$els[1].trigger('mouseout');
+            expect(editor.getAllMarks().length).toEqual(0);
         });
     });
 });
