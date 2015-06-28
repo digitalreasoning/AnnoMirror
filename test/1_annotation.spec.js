@@ -109,6 +109,13 @@ describe('AnnoMirror.addAnnotation', function() {
             expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
             expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
         });
+        it('forces exact matching annotations to go on a new line', function() {
+            var anno1 = $el.annoMirror('addAnnotation', 43, 59);
+            var anno2 = $el.annoMirror('addAnnotation', 43, 59);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(anno1.$els[0].data().widget).toBe(lineHandle2.widgets[1]);
+            expect(anno2.$els[0].data().widget).toBe(lineHandle2.widgets[0]);
+        });
         it('left side overlap creates a new line', function() {
             var anno1 = $el.annoMirror('addAnnotation', 43, 59);
             var anno2 = $el.annoMirror('addAnnotation', 56, 70);

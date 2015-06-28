@@ -191,6 +191,8 @@
                     labelPos.width = $label.outerWidth();
                     labelPos.right = labelPos.left + labelPos.width;
                     // Checks if the "from" and "to" fall within another label.
+                    var exactMatch = $label.data('fromCh') === fromCh && 
+                                     $label.data('toCh') === toCh;
                     var fromIntersect = parseInt(labelPos.left) < parseInt(newPos.left) && 
                                         parseInt(newPos.left) < parseInt(labelPos.right);
                     var toIntersect   = parseInt(labelPos.left) < parseInt(newPos.right) && 
@@ -202,7 +204,7 @@
                                            parseInt(labelPos.right) < parseInt(newPos.right))
                     // If the "to" or "from" of the new label lies inside
                     // another label then we don't want to use this lineWidget.
-                    if (fromIntersect || toIntersect || subsetIntersect) {
+                    if (exactMatch || fromIntersect || toIntersect || subsetIntersect) {
                         didIntersect = true; break;
                     }
                 }
