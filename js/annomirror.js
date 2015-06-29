@@ -1,22 +1,18 @@
-// Boilerplate from: https://github.com/umdjs/umd/blob/master/jqueryPlugin.js
 ;(function(factory) {
     if (typeof define === 'function' && define.amd) {
-        // AMD. Register as an anonymous module.
-        define(['jquery', 'codemirror'], factory);
+        define(['codemirror'], factory); // AMD
     } else {
-        // Browser globals
-        factory(jQuery, CodeMirror);
+        window.AnnoMirror = factory(CodeMirror); // Browser
     }
-}(function($, CM) {
+}(function(CM) {
     "use strict";
-    var pluginName = "annoMirror";
-    var defaults = {
-        codeMirror: {
-            lineNumbers: true,
-            readOnly: true
-        }
+    var copyObj = function(obj, target, overwrite) {
+        if (!target) target = { };
+        for (var prop in obj)
+            if (obj.hasOwnProperty(prop) && (overwrite !== false || !target.hasOwnProperty(prop)))
+                target[prop] = obj[prop];
+        return target;
     };
-
     var Annotation = function(options) {
         this.id = options.id || -1;
         this.start = options.start;
@@ -25,10 +21,10 @@
         this.title = options.title || this.id;
         this.color = options.color || '#333';
         this.data = options.data || { };
-        this.$els = options.$els || [];
+        this.nodes = options.nodes || [];
         if (this.id == -1)           throw "Annotation.constructor requires an id parameter."
         if (this.start == undefined) throw "Annotation.constructor requires a start parameter.";
-        if (this.end == undefined)   throw "Annotation.constructor requires a end parameter.";
+        if (this.end == undefined)   throw "Annotation.constructor requires an end parameter.";
     };
     Annotation.prototype.update = function(options) { 
         this.title = options.title || this.title; 
@@ -43,216 +39,217 @@
             color: this.color,
             title: this.title,
             text: this.text,
-            data: $.extend(true, { }, this.data)
+            data: copyObj({ }, this.data)
         };
     };
 
-    var Plugin = function(element, options) {
-        this.$el = $(element);
-        this._settings = $.extend({ }, defaults, options);
+    var defaults = {
+        codeMirror: {
+            lineNumbers: true,
+            readOnly: true
+        }
+    };
+    var Doc = function(node, options) {
+        this.node = node;
+        this._settings = copyObj(defaults, options, false);
         this._defaults = defaults;
-        this._name = pluginName;
         this._annotations = [];
         this._annoId = 1;
-        this.init();
-    }
-    $.extend(Plugin.prototype, {
-        init: function() {
-            this._editor = CM.fromTextArea(this.$el.get(0), this._settings.codeMirror);
-            this._gutterWidth = $(this._editor.getGutterElement()).outerWidth();
-            this._charWidth = this._editor.defaultCharWidth();
-        },
-        // Public methods
-        // ----------------------------------------
-        addAnnotation: function(start, end, options) {
-            if (typeof options !== 'object') options = { };
-            if (start == undefined || length == undefined)
-                throw 'Start and end offsets must be provided for \'addAnnotation\'.';
-            if (typeof start == 'number') start = this._editor.posFromIndex(start);
-            if (typeof end   == 'number') end   = this._editor.posFromIndex(end);
-            var anno = new Annotation({
-                id: options.id || this._annoId++,
-                start: this._editor.indexFromPos(start),
-                end: this._editor.indexFromPos(end),
-                title: options.title,
-                color: options.color,
-                text: this._editor.getRange(start, end),
-                data: options.data
-            });
-            var $els = [];
-            // Single line annotation scenario
-            if (start.line == end.line) {
-                var widget = this._getOrCreateLineWidget(start.line, start.ch, end.ch);
-                var $anno = this._displayAnnotation(anno, widget, start.ch, end.ch);
-                if ($anno) $els.push($anno);
-            // Multi-line annotation scenario
-            } else {
-                for (var i = start.line; i <= end.line; i++) {
-                    var lineHandle = this._editor.getLineHandle(i);
-                    if (lineHandle.text == '') continue;
-                    var $anno;
-                    if (i == start.line) {
-                        var widget = this._getOrCreateLineWidget(i, start.ch, lineHandle.text.length);
-                        $anno = this._displayAnnotation(anno, widget, start.ch, lineHandle.text.length, false, true);
-                    } else if (i != start.line && i != end.line) {
-                        var widget = this._getOrCreateLineWidget(i, 0, lineHandle.text.length);
-                        $anno = this._displayAnnotation(anno, widget, 0, lineHandle.text.length, true, true);
-                    } else {
-                        var widget = this._getOrCreateLineWidget(i, 0, end.ch);
-                        $anno = this._displayAnnotation(anno, widget, 0, end.ch, true, false);
-                    }
-                    if ($anno) $els.push($anno);
+        this._init();
+    };
+    // Public methods
+    // ----------------------------------------
+    Doc.prototype.addAnnotation = function(start, end, options) {
+        if (typeof options !== 'object') options = { };
+        if (start == undefined || length == undefined)
+            throw 'Start and end offsets must be provided for \'addAnnotation\'.';
+        if (typeof start == 'number') start = this._editor.posFromIndex(start);
+        if (typeof end   == 'number') end   = this._editor.posFromIndex(end);
+        var anno = new Annotation({
+            id: options.id || this._annoId++,
+            start: this._editor.indexFromPos(start),
+            end: this._editor.indexFromPos(end),
+            title: options.title,
+            color: options.color,
+            text: this._editor.getRange(start, end),
+            data: options.data
+        });
+        var nodes = [];
+        // Single line annotation scenario
+        if (start.line == end.line) {
+            var widget = this._getOrCreateLineWidget(start.line, start.ch, end.ch);
+            var annoNode = this._displayAnnotation(anno, widget, start.ch, end.ch);
+            if (annoNode) nodes.push(annoNode);
+        // Multi-line annotation scenario
+        } else {
+            for (var i = start.line; i <= end.line; i++) {
+                var lineHandle = this._editor.getLineHandle(i);
+                if (lineHandle.text == '') continue;
+                var annoNode;
+                if (i == start.line) {
+                    var widget = this._getOrCreateLineWidget(i, start.ch, lineHandle.text.length);
+                    annoNode = this._displayAnnotation(anno, widget, start.ch, lineHandle.text.length, false, true);
+                } else if (i != start.line && i != end.line) {
+                    var widget = this._getOrCreateLineWidget(i, 0, lineHandle.text.length);
+                    annoNode = this._displayAnnotation(anno, widget, 0, lineHandle.text.length, true, true);
+                } else {
+                    var widget = this._getOrCreateLineWidget(i, 0, end.ch);
+                    annoNode = this._displayAnnotation(anno, widget, 0, end.ch, true, false);
+                }
+                if (annoNode) nodes.push(annoNode);
+            }
+        }
+        anno.nodes = nodes;
+        this._eventsOnAnno(anno);
+        for (var i = 0; i < nodes.length; i++) 
+            nodes[i].dataset['anno-id'] = anno;
+        this._annotations.push(anno);
+        return anno;
+    };
+    Doc.prototype.getAnnotations = function() {
+        var annos = [];
+        for (var i = 0; i < this._annotations; i++) 
+            annos.push(this._annotations[i].toHash());
+        return annos;
+    };
+    Doc.prototype.editAnnotation = function(anno, options) {
+        if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";
+        // Update the annotation properties.
+        anno.update(options);
+        // Update the annotation elements
+        for (var i = 0; i < anno.nodes.length; i++) {
+            var node = anno.nodes[i];
+            node.getElementsByClassName("text")[0].innerHTML = anno.title;
+            node.getElementsByClassName("indicator")[0].style['background-color'] = anno.color;
+            node.getElementsByClassName("arrow")[0].style['border-color'] = anno.color;
+        }
+    };
+    Doc.prototype.removeAnnotation = function(annoOrId) {
+        if (!annoOrId) throw "An annotation instance or id must be provided to 'removeAnnotation'.";
+        var idx;
+        if (typeof annoOrId == 'number') {
+            for (var i = 0; i < this._annotations.length; i++)
+                if (this._annotations[i].id === annoOrId) {
+                    idx = i; break;
+                }
+        } else
+            idx = this._annotations.indexOf(annoOrId);
+        if (idx == undefined || idx == -1)
+            return false;
+        var anno = this._annotations.splice(idx, 1)[0];
+        for (var i = 0; i < anno.nodes.length; i++)
+            anno.nodes[i].parentNode.removeChild(anno.nodes[i]);
+        return anno;
+    };
+    Doc.prototype.editor = function() { return this._editor; };
+    Doc.prototype.destroy = function() { 
+        this._editor.toTextArea();
+    };
+    // Private methods
+    // ----------------------------------------
+    Doc.prototype._init = function() {
+        this._editor = CM.fromTextArea(this.node, this._settings.codeMirror);
+        this._gutterWidth = this._editor.getGutterElement().offsetWidth;
+        this._charWidth = this._editor.defaultCharWidth();
+    };
+    Doc.prototype._displayAnnotation = function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
+        var pxPos = this._getAnnoPos(widget.line.lineNo(), fromCh, toCh);
+        var annoNode = document.createElement('div');
+        annoNode.className = 'annotation';
+        annoNode.style.left = pxPos.left + 'px';
+        annoNode.style.width = pxPos.width + 'px';
+        annoNode.innerHTML = [
+            '<span class="text">', anno.title, '</span>',
+            '<div class="indicator" style="background-color: ', anno.color, '"></div>'
+        ].join('');
+        widget.node.appendChild(annoNode);
+        annoNode.dataset.widget = widget;
+        annoNode.dataset.fromCh = fromCh;
+        annoNode.dataset.toCh = toCh;
+        // Center the text if needed.
+        var textWidth = annoNode.getElementsByClassName('text')[0].offsetWidth;
+        var indWidth = annoNode.offsetWidth;
+        if (textWidth > indWidth) {
+            annoNode.getElementsByClassName('indicator')[0].style.width = indWidth;
+            annoNode.style.width = textWidth;
+            annoNode.style.left -= textWidth / 2 - indWidth / 2;
+        }
+        // Add the multi-line arrows as needed.
+        if (leftArrow || rightArrow) {
+            var arrowDiv = document.createElement('div');
+            arrowDiv.className = 'arrow';
+            arrowDiv.style['border-color'] = anno.color;
+            if (leftArrow)  arrowDiv.className += ' left';
+            if (rightArrow) arrowDiv.className += ' right';
+            annoNode.getElementsByClassName('indicator')[0].appendChild(arrowDiv);
+        }
+        return annoNode;
+    };
+    Doc.prototype._getOrCreateLineWidget = function(line, fromCh, toCh) {
+        var widget = false;
+        var lineHandle = this._editor.getLineHandle(line);
+        var widgets = lineHandle.widgets || [];
+        for (var i = widgets.length - 1; i >= 0; i--) {
+            var aWidget = widgets[i];
+            var didIntersect = false;
+            var nodes = aWidget.node.getElementsByClassName('annotation');
+            for (var j = 0; j < nodes.length; j++) {
+                var labelNode = nodes[j];
+                var newPos = this._getAnnoPos(lineHandle.lineNo(), fromCh, toCh);
+                // Checks if the "from" and "to" fall within another label.
+                var exactMatch = labelNode.dataset.fromCh === fromCh && 
+                                 labelNode.dataset.toCh === toCh;
+                var fromIntersect = parseInt(labelNode.offsetLeft) < parseInt(newPos.left) && 
+                                    parseInt(newPos.left) < parseInt(labelNode.offsetRight);
+                var toIntersect   = parseInt(labelNode.offsetLeft) < parseInt(newPos.right) && 
+                                    parseInt(newPos.right) < parseInt(labelNode.offsetRight);
+                // Checks if the new labeltation "wraps" other labels.
+                var subsetIntersect = (parseInt(newPos.left) < parseInt(labelNode.offsetLeft) && 
+                                        parseInt(labelNode.offsetRight) < parseInt(newPos.right)) ||
+                                        (parseInt(newPos.left) < parseInt(labelNode.offsetLeft) && 
+                                        parseInt(labelNode.offsetRight) < parseInt(newPos.right))
+                // If the "to" or "from" of the new label lies inside
+                // another label then we don't want to use this lineWidget.
+                if (exactMatch || fromIntersect || toIntersect || subsetIntersect) {
+                    didIntersect = true; break;
                 }
             }
-            anno.$els = $els;
-            this._eventsOnAnno(anno);
-            $.each($els, function() { this.data('annotation', anno); });
-            this._annotations.push(anno);
-            return anno;
-        },
-        getAnnotations: function() {
-            return $.map(this._annotations, function(anno) {
-                return anno.toHash();
-            });
-        },
-        editAnnotation: function(anno, options) {
-            if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";
-            // Update the annotation properties.
-            anno.update(options);
-            // Update the annotation elements
-            $.each(anno.$els, function() {
-                $('.text', this).text(anno.title);
-                $('.indicator', this).css('backgroundColor', anno.color);
-                $('.arrow', this).css('borderColor', anno.color);
-            });
-        },
-        removeAnnotation: function(annoOrId) {
-            if (!annoOrId) throw "An annotation instance or id must be provided to 'removeAnnotation'.";
-            var idx;
-            if (typeof annoOrId == 'number') {
-                for (var i = 0; i < this._annotations.length; i++)
-                    if (this._annotations[i].id === annoOrId) {
-                        idx = i; break;
-                    }
-            } else
-                idx = this._annotations.indexOf(annoOrId);
-            if (idx == undefined || idx == -1)
-                return false;
-            var anno = this._annotations.splice(idx, 1)[0];
-            $.each(anno.$els, function() { this.remove(); });
-            return anno;
-        },
-        editor: function() { return this._editor; },
-        destroy: function() { 
-            this._editor.toTextArea();
-            this.$el.data('plugin_' + pluginName, null);
-        },
-        // Private methods
-        // ----------------------------------------
-        _displayAnnotation: function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
-            var pxPos = this._getAnnoPos(widget.line.lineNo(), fromCh, toCh);
-            var $anno = $([
-                '<div class="annotation">',
-                    '<span class="text">', anno.title, '</span>',
-                    '<div class="indicator" style="background-color: ', anno.color, '"></div>',
-                '</div>'
-            ].join('')).css({ left: pxPos.left, width: pxPos.width });
-            $(widget.node).append($anno);
-            $anno.data('widget', widget);
-            $anno.data('fromCh', fromCh);
-            $anno.data('toCh', toCh);
-            // Center the text if needed.
-            var textWidth = $('.text', $anno).outerWidth();
-            var indWidth = $anno.outerWidth();
-            if (textWidth > indWidth) {
-                $('.indicator', $anno).width(indWidth); 
-                $anno.width(textWidth);
-                $anno.css('left', '-=' + (textWidth / 2 - indWidth / 2));
-            }
-            // Add the multi-line arrows as needed.
-            if (leftArrow === true) 
-                $('.indicator', $anno).append('<div class="arrow left" style="border-color: ' + anno.color + '"></div>');
-            if (rightArrow === true) 
-                $('.indicator', $anno).append('<div class="arrow right" style="border-color: ' + anno.color + '"></div>');
-            return $anno;
-        },
-        _getOrCreateLineWidget: function(line, fromCh, toCh) {
-            var widget = false;
-            var lineHandle = this._editor.getLineHandle(line);
-            var widgets = lineHandle.widgets || [];
-            for (var i = widgets.length - 1; i >= 0; i--) {
-                var aWidget = widgets[i];
-                var didIntersect = false;
-                var nodes = $('.annotation', aWidget.node);
-                for (var j = 0; j < nodes.length; j++) {
-                    var $label = $(nodes[j]);
-                    var newPos = this._getAnnoPos(lineHandle.lineNo(), fromCh, toCh);
-                    var labelPos = $label.position();
-                    labelPos.width = $label.outerWidth();
-                    labelPos.right = labelPos.left + labelPos.width;
-                    // Checks if the "from" and "to" fall within another label.
-                    var exactMatch = $label.data('fromCh') === fromCh && 
-                                     $label.data('toCh') === toCh;
-                    var fromIntersect = parseInt(labelPos.left) < parseInt(newPos.left) && 
-                                        parseInt(newPos.left) < parseInt(labelPos.right);
-                    var toIntersect   = parseInt(labelPos.left) < parseInt(newPos.right) && 
-                                        parseInt(newPos.right) < parseInt(labelPos.right);
-                    // Checks if the new labeltation "wraps" other labels.
-                    var subsetIntersect = (parseInt(newPos.left) < parseInt(labelPos.left) && 
-                                           parseInt(labelPos.right) < parseInt(newPos.right)) ||
-                                          (parseInt(newPos.left) < parseInt(labelPos.left) && 
-                                           parseInt(labelPos.right) < parseInt(newPos.right))
-                    // If the "to" or "from" of the new label lies inside
-                    // another label then we don't want to use this lineWidget.
-                    if (exactMatch || fromIntersect || toIntersect || subsetIntersect) {
-                        didIntersect = true; break;
-                    }
-                }
-                if (!didIntersect) { widget = aWidget; break; }
-            }
-            if (!widget)
-                return this._editor.addLineWidget(line, $('<div class="anno-line-widget">&nbsp;</div>').get(0), {
-                    above: true,
-                    insertAt: 0
-                });
-            return widget;
-        },
-        _getAnnoPos: function(line, fromCh, toCh) {
-            var pos = {
-                left:  this._editor.cursorCoords({ line: line, ch: fromCh }).left - this._gutterWidth - this._charWidth,
-                right: this._editor.cursorCoords({ line: line, ch: toCh   }).left - this._gutterWidth - this._charWidth
-            };
-            pos.width = pos.right - pos.left;
-            return pos;
-        },
-        _eventsOnAnno: function(anno) {
-            var self = this;
-            $.each(anno.$els, function() {
-                var mark;
-                this.hover(function() {
-                    mark = self._editor.markText(self._editor.posFromIndex(anno.start), 
-                                                 self._editor.posFromIndex(anno.end),
-                                                 { className: 'anno-mark-text' }); 
-                }, function() {
-                    if (mark) mark.clear();
-                });
+            if (!didIntersect) { widget = aWidget; break; }
+        }
+        if (!widget) {
+            var lineNode = document.createElement('div');
+            lineNode.className = 'anno-line-widget';
+            return this._editor.addLineWidget(line, lineNode, {
+                above: true,
+                insertAt: 0
             });
         }
-    });
-
-    $.fn[pluginName] = function(methodOrOptions) {
-        var els = this.each(function() {
-            if (!$.data(this, "plugin_" + pluginName))
-                $.data(this, "plugin_" + pluginName, new Plugin(this, methodOrOptions));
-        });
-        if (els.length == 1 && typeof methodOrOptions === 'string') {
-            if (typeof Plugin.prototype[methodOrOptions] == 'function') {
-                var data = $.data(els[0], 'plugin_' + pluginName);
-                return data[methodOrOptions].apply(data, Array.prototype.slice.call(arguments, 1));
-            } else
-                throw "No method '" + methodOrOptions + "' available on annoMirror plugin.";
-        } else if (els.length > 1 && isCallingMethod)
-            throw "AnnoMirror does not support calling methods on multiple instances at once. Refine your selector to include a single element.";
-        return els;
+        return widget;
+    };
+    Doc.prototype._getAnnoPos = function(line, fromCh, toCh) {
+        var gutterCharWidth = this._gutterWidth + this._charWidth;
+        var pos = {
+            left:  this._editor.cursorCoords({ line: line, ch: fromCh }).left - gutterCharWidth,
+            right: this._editor.cursorCoords({ line: line, ch: toCh   }).left - gutterCharWidth
+        };
+        pos.width = pos.right - pos.left;
+        return pos;
+    };
+    Doc.prototype._eventsOnAnno = function(anno) {
+        for (var i = 0; i < anno.nodes.length; i++) {
+            anno.nodes[i].addEventListener('mouseover', function() {
+                mark = this._editor.markText(this._editor.posFromIndex(anno.start), 
+                                             this._editor.posFromIndex(anno.end),
+                                             { className: 'anno-mark-text' }); 
+            });
+            anno.nodes[i].addEventListener('mouseout', function() {
+                if (mark) mark.clear();
+            });
+        }
+    };
+    return {
+        fromTextArea: function(node, options) {
+            return new Doc(node, options);
+        }
     };
 }));

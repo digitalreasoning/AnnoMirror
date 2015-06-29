@@ -1,44 +1,35 @@
 jasmine.getFixtures().fixturesPath = 'test/fixtures';
 
-describe('AnnoMirror.constructor', function() {
-    var $el;
+describe('AnnoMirror.fromTextArea', function() {
+    var node;
     beforeEach(function() {
         loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+        node = $('textarea').get(0);
     });
 
     it('exists', function() {
-        expect($el.annoMirror).toEqual($.fn.annoMirror);
+        expect(window.AnnoMirror).toBeDefined();
     });
     it('creates a CodeMirror HTML instance', function() {
+        var doc = AnnoMirror.fromTextArea(node);
         expect($('div.CodeMirror')).toExist();
     });
-    it('catch an error when calling a non-existant method', function() {
-        // Without options
-        var error;
-        try { $el.annoMirror('thisDoesNotExistWOOptions'); }
-        catch (err) { error = err; }
-        expect(error).toMatch('thisDoesNotExistWOOptions');
-        // With options
-        try { $el.annoMirror('thisDoesNotExistWOptions', "blah", [], { test: 1 }); }
-        catch (err) { error = err; }
-        expect(error).toMatch('thisDoesNotExistWOptions');
+    it('returns a proper Doc instance', function() {
+        var doc = AnnoMirror.fromTextArea(node);
+        expect(typeof doc.addAnnotation).toEqual('function');
+        expect(typeof doc.editAnnotation).toEqual('function');
+        expect(typeof doc.removeAnnotation).toEqual('function');
     });
     it('can add random options', function() {
-        loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror({
+        var doc = AnnoMirror.fromTextArea(node, {
             thisIsNotATrueOption: true
         });
-        expect($el.data('plugin_annoMirror')._settings).toEqual(jasmine.objectContaining({
+        expect(doc._settings).toEqual(jasmine.objectContaining({
             thisIsNotATrueOption: true
         }));
     });
     it('can alter the CodeMirror defaults', function() {
-        loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror({
+        var doc = AnnoMirror.fromTextArea(node, {
             codeMirror: {
                 lineNumbers: false
             }
@@ -47,37 +38,36 @@ describe('AnnoMirror.constructor', function() {
     });
 });
 
-describe('AnnoMirror.editor', function() {
-    var $el;
+describe('Doc.editor', function() {
+    var node, doc;
     beforeEach(function() {
         loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+        node = $('textarea').get(0);
+        doc = AnnoMirror.fromTextArea(node);
     });
 
     it('exists', function() {
-        expect(typeof $el.data('plugin_annoMirror').editor).toEqual('function');
+        expect(typeof doc.editor).toEqual('function');
     });
     it('returns a CodeMirror editor instance', function() {
-        expect($el.annoMirror('editor')).toBeDefined();
-        expect(typeof $el.annoMirror('editor').unlinkDoc).toBe('function');
+        expect(doc.editor()).toBeDefined();
+        expect(typeof doc.editor().unlinkDoc).toBe('function');
     });
 });
 
-describe('AnnoMirror.destroy', function() {
-    var $el;
+describe('Doc.destroy', function() {
+    var node, doc;
     beforeEach(function() {
         loadFixtures('textarea.html');
-        $el = $('textarea');
-        $el.annoMirror();
+        node = $('textarea').get(0);
+        doc = AnnoMirror.fromTextArea(node);
     });
 
     it('exists', function() {
-        expect(typeof $el.data('plugin_annoMirror').destroy).toEqual('function');
+        expect(typeof doc.destroy).toEqual('function');
     });
     it('removes the AnnoMirror instance', function() {
-        $el.annoMirror('destroy');
+        doc.destroy();
         expect($('.CodeMirror').length).toBe(0);
-        expect($el.data('plugin_annoMirror')).toEqual(null);
     });
 });
