@@ -22,7 +22,7 @@
         this.start = options.start;
         this.end = options.end;
         this.text = options.text || '';
-        this.title = options.title || this.id;
+        this.title = options.title || this.id.toString();
         this.color = options.color || '#333';
         this.data = options.data || { };
         this.nodes = options.nodes || [];
@@ -168,6 +168,7 @@
             '<span class="text">', anno.title, '</span>',
             '<div class="indicator" style="background-color: ', anno.color, ';width: ' + (anno.text.length * this._charWidth) + 'px"></div>'
         ].join('');
+        annoNode.dataset.id = anno.id;
         widget.node.appendChild(annoNode);
         setData(annoNode, {
             widget: widget,
@@ -238,6 +239,7 @@
         if (textWidth > pos.width) {
             pos.left -= textWidth / 2 - pos.width / 2;
             pos.width = textWidth;
+            pos.right = pos.left + pos.width;
         }
         return pos;
     };

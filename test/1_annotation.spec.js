@@ -260,7 +260,7 @@ describe('Doc.getAnnotations', function() {
         annos.pop();
         annos.pop();
         var newAnnos = doc.getAnnotations();
-        expect(newAnnos[0].title).toEqual(newAnnos[0].id);
+        expect(newAnnos[0].title).toEqual(newAnnos[0].id.toString());
         expect(newAnnos.length).toEqual(3);
     });
     it('returns the proper amount after removing annotations', function() {
