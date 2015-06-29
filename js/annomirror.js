@@ -111,7 +111,7 @@
     };
     Doc.prototype.getAnnotations = function() {
         var annos = [];
-        for (var i = 0; i < this._annotations; i++) 
+        for (var i = 0; i < this._annotations.length; i++) 
             annos.push(this._annotations[i].toHash());
         return annos;
     };
@@ -124,7 +124,10 @@
             var node = anno.nodes[i];
             node.getElementsByClassName("text")[0].innerHTML = anno.title;
             node.getElementsByClassName("indicator")[0].style['background-color'] = anno.color;
-            node.getElementsByClassName("arrow")[0].style['border-color'] = anno.color;
+            var arrows = node.getElementsByClassName('arrow');
+            if (arrows.length > 0)
+                for (var j = 0; j < arrows.length; j++)
+                    arrows[j].style['border-color'] = anno.color;
         }
     };
     Doc.prototype.removeAnnotation = function(annoOrId) {
@@ -210,10 +213,10 @@
                 var toIntersect   = parseInt(labelNode.offsetLeft) < parseInt(newPos.right) && 
                                     parseInt(newPos.right) < parseInt(labelNode.offsetRight);
                 // Checks if the new label "wraps" other labels.
-                var subsetIntersect = (parseInt(newPos.left) < parseInt(labelNode.offsetLeft) && 
-                                        parseInt(labelNode.offsetRight) < parseInt(newPos.right)) ||
-                                        (parseInt(newPos.left) < parseInt(labelNode.offsetLeft) && 
-                                        parseInt(labelNode.offsetRight) < parseInt(newPos.right))
+                var subsetIntersect = (parseInt(newPos.left) <= parseInt(labelNode.offsetLeft) && 
+                                       parseInt(labelNode.offsetRight) <= parseInt(newPos.right)) ||
+                                       (parseInt(newPos.left) <= parseInt(labelNode.offsetLeft) && 
+                                       parseInt(labelNode.offsetRight) <= parseInt(newPos.right))
                 // If the "to" or "from" of the new label lies inside
                 // another label then we don't want to use this lineWidget.
                 if (exactMatch || fromIntersect || toIntersect || subsetIntersect) {
@@ -241,10 +244,12 @@
         return pos;
     };
     Doc.prototype._eventsOnAnno = function(anno) {
+        var self = this;
         for (var i = 0; i < anno.nodes.length; i++) {
+            var mark;
             anno.nodes[i].addEventListener('mouseover', function() {
-                mark = this._editor.markText(this._editor.posFromIndex(anno.start), 
-                                             this._editor.posFromIndex(anno.end),
+                mark = self._editor.markText(self._editor.posFromIndex(anno.start), 
+                                             self._editor.posFromIndex(anno.end),
                                              { className: 'anno-mark-text' }); 
             });
             anno.nodes[i].addEventListener('mouseout', function() {
