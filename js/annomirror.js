@@ -80,8 +80,8 @@
         var nodes = [];
         // Single line annotation scenario
         if (start.line == end.line) {
-            var widget = this._getOrCreateLineWidget(start.line, start.ch, end.ch);
-            var annoNode = this._displayAnnotation(anno, widget, start.ch, end.ch);
+            var widget = this._getOrCreateLineWidget(start.line, start.ch, end.ch, anno.title);
+            var annoNode = this._displayLabel(anno, widget, start.ch, end.ch);
             if (annoNode) nodes.push(annoNode);
         // Multi-line annotation scenario
         } else {
@@ -90,14 +90,14 @@
                 if (lineHandle.text == '') continue;
                 var annoNode;
                 if (i == start.line) {
-                    var widget = this._getOrCreateLineWidget(i, start.ch, lineHandle.text.length);
-                    annoNode = this._displayAnnotation(anno, widget, start.ch, lineHandle.text.length, false, true);
+                    var widget = this._getOrCreateLineWidget(i, start.ch, lineHandle.text.length, anno.title);
+                    annoNode = this._displayLabel(anno, widget, start.ch, lineHandle.text.length, false, true);
                 } else if (i != start.line && i != end.line) {
-                    var widget = this._getOrCreateLineWidget(i, 0, lineHandle.text.length);
-                    annoNode = this._displayAnnotation(anno, widget, 0, lineHandle.text.length, true, true);
+                    var widget = this._getOrCreateLineWidget(i, 0, lineHandle.text.length, anno.title);
+                    annoNode = this._displayLabel(anno, widget, 0, lineHandle.text.length, true, true);
                 } else {
-                    var widget = this._getOrCreateLineWidget(i, 0, end.ch);
-                    annoNode = this._displayAnnotation(anno, widget, 0, end.ch, true, false);
+                    var widget = this._getOrCreateLineWidget(i, 0, end.ch, anno.title);
+                    annoNode = this._displayLabel(anno, widget, 0, end.ch, true, false);
                 }
                 if (annoNode) nodes.push(annoNode);
             }
@@ -158,15 +158,15 @@
         this._gutterWidth = this._editor.getGutterElement().offsetWidth;
         this._charWidth = this._editor.defaultCharWidth();
     };
-    Doc.prototype._displayAnnotation = function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
-        var pxPos = this._getAnnoPos(widget.line.lineNo(), fromCh, toCh);
+    Doc.prototype._displayLabel = function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
+        var pxPos = this._getAnnoPos(widget.line.lineNo(), fromCh, toCh, anno.title);
         var annoNode = document.createElement('div');
         annoNode.className = 'annotation';
         annoNode.style.left = pxPos.left + 'px';
         annoNode.style.width = pxPos.width + 'px';
         annoNode.innerHTML = [
             '<span class="text">', anno.title, '</span>',
-            '<div class="indicator" style="background-color: ', anno.color, '"></div>'
+            '<div class="indicator" style="background-color: ', anno.color, ';width: ' + (anno.text.length * this._charWidth) + 'px"></div>'
         ].join('');
         widget.node.appendChild(annoNode);
         setData(annoNode, {
@@ -174,14 +174,6 @@
             fromCh: fromCh,
             toCh: toCh
         });
-        // Center the text if needed.
-        var textWidth = annoNode.getElementsByClassName('text')[0].offsetWidth;
-        var indWidth = annoNode.offsetWidth;
-        if (textWidth > indWidth) {
-            annoNode.getElementsByClassName('indicator')[0].style.width = indWidth;
-            annoNode.style.width = textWidth;
-            annoNode.style.left -= textWidth / 2 - indWidth / 2;
-        }
         // Add the multi-line arrows as needed.
         if (leftArrow || rightArrow) {
             var arrowDiv = document.createElement('div');
@@ -193,7 +185,7 @@
         }
         return annoNode;
     };
-    Doc.prototype._getOrCreateLineWidget = function(line, fromCh, toCh) {
+    Doc.prototype._getOrCreateLineWidget = function(line, fromCh, toCh, text) {
         var widget = false;
         var lineHandle = this._editor.getLineHandle(line);
         var widgets = lineHandle.widgets || [];
@@ -204,7 +196,7 @@
             for (var j = 0; j < nodes.length; j++) {
                 var labelNode = nodes[j];
                 labelNode.offsetRight = labelNode.offsetLeft + labelNode.offsetWidth;
-                var newPos = this._getAnnoPos(lineHandle.lineNo(), fromCh, toCh);
+                var newPos = this._getAnnoPos(lineHandle.lineNo(), fromCh, toCh, text);
                 // Checks if the "from" and "to" fall within another label.
                 var exactMatch = labelNode.data.fromCh === fromCh && 
                                  labelNode.data.toCh === toCh;
@@ -234,13 +226,19 @@
             insertAt: 0
         });
     };
-    Doc.prototype._getAnnoPos = function(line, fromCh, toCh) {
+    Doc.prototype._getAnnoPos = function(line, fromCh, toCh, text) {
         var gutterCharWidth = this._gutterWidth + this._charWidth;
         var pos = {
             left:  this._editor.cursorCoords({ line: line, ch: fromCh }).left - gutterCharWidth,
             right: this._editor.cursorCoords({ line: line, ch: toCh   }).left - gutterCharWidth
         };
         pos.width = pos.right - pos.left;
+        // Take the text into account.
+        var textWidth = text.length * this._charWidth;
+        if (textWidth > pos.width) {
+            pos.left -= textWidth / 2 - pos.width / 2;
+            pos.width = textWidth;
+        }
         return pos;
     };
     Doc.prototype._eventsOnAnno = function(anno) {

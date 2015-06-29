@@ -168,6 +168,20 @@ describe('Doc.addAnnotation', function() {
             expect(lineHandle3.widgets.indexOf(anno1.nodes[1].data.widget)).toBe(1);
             expect(lineHandle3.widgets.indexOf(anno2.nodes[1].data.widget)).toBe(0);
         });
+        it('text extension (in front)', function() {
+            var anno1 = doc.addAnnotation(43, 45);
+            var anno2 = doc.addAnnotation(45, 47, { title: 'ABCD' });
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(lineHandle2.widgets.indexOf(anno1.nodes[0].data.widget)).toBe(1);
+            expect(lineHandle2.widgets.indexOf(anno2.nodes[0].data.widget)).toBe(0);
+        });
+        it('text extension (in rear)', function() {
+            var anno1 = doc.addAnnotation(43, 45, { title: 'TEST' });
+            var anno2 = doc.addAnnotation(45, 47);
+            expect(lineHandle2.widgets.length).toEqual(2);
+            expect(lineHandle2.widgets.indexOf(anno1.nodes[0].data.widget)).toBe(1);
+            expect(lineHandle2.widgets.indexOf(anno2.nodes[0].data.widget)).toBe(0);
+        });
     });
 });
 
