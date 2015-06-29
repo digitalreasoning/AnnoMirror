@@ -13,6 +13,10 @@
                 target[prop] = obj[prop];
         return target;
     };
+    var setData = function(node, data) {
+        node.data = node.data || { };
+        copyObj(data, node.data);
+    };
     var Annotation = function(options) {
         this.id = options.id || -1;
         this.start = options.start;
@@ -39,7 +43,7 @@
             color: this.color,
             title: this.title,
             text: this.text,
-            data: copyObj({ }, this.data)
+            data: copyObj(this.data, { })
         };
     };
 
@@ -52,7 +56,6 @@
     var Doc = function(node, options) {
         this.node = node;
         this._settings = copyObj(defaults, options, false);
-        this._defaults = defaults;
         this._annotations = [];
         this._annoId = 1;
         this._init();
@@ -102,7 +105,7 @@
         anno.nodes = nodes;
         this._eventsOnAnno(anno);
         for (var i = 0; i < nodes.length; i++) 
-            nodes[i].dataset['anno-id'] = anno;
+            setData(nodes[i], { anno: anno });
         this._annotations.push(anno);
         return anno;
     };
@@ -163,9 +166,11 @@
             '<div class="indicator" style="background-color: ', anno.color, '"></div>'
         ].join('');
         widget.node.appendChild(annoNode);
-        annoNode.dataset.widget = widget;
-        annoNode.dataset.fromCh = fromCh;
-        annoNode.dataset.toCh = toCh;
+        setData(annoNode, {
+            widget: widget,
+            fromCh: fromCh,
+            toCh: toCh
+        });
         // Center the text if needed.
         var textWidth = annoNode.getElementsByClassName('text')[0].offsetWidth;
         var indWidth = annoNode.offsetWidth;
@@ -195,15 +200,16 @@
             var nodes = aWidget.node.getElementsByClassName('annotation');
             for (var j = 0; j < nodes.length; j++) {
                 var labelNode = nodes[j];
+                labelNode.offsetRight = labelNode.offsetLeft + labelNode.offsetWidth;
                 var newPos = this._getAnnoPos(lineHandle.lineNo(), fromCh, toCh);
                 // Checks if the "from" and "to" fall within another label.
-                var exactMatch = labelNode.dataset.fromCh === fromCh && 
-                                 labelNode.dataset.toCh === toCh;
+                var exactMatch = labelNode.data.fromCh === fromCh && 
+                                 labelNode.data.toCh === toCh;
                 var fromIntersect = parseInt(labelNode.offsetLeft) < parseInt(newPos.left) && 
                                     parseInt(newPos.left) < parseInt(labelNode.offsetRight);
                 var toIntersect   = parseInt(labelNode.offsetLeft) < parseInt(newPos.right) && 
                                     parseInt(newPos.right) < parseInt(labelNode.offsetRight);
-                // Checks if the new labeltation "wraps" other labels.
+                // Checks if the new label "wraps" other labels.
                 var subsetIntersect = (parseInt(newPos.left) < parseInt(labelNode.offsetLeft) && 
                                         parseInt(labelNode.offsetRight) < parseInt(newPos.right)) ||
                                         (parseInt(newPos.left) < parseInt(labelNode.offsetLeft) && 
@@ -216,15 +222,14 @@
             }
             if (!didIntersect) { widget = aWidget; break; }
         }
-        if (!widget) {
-            var lineNode = document.createElement('div');
-            lineNode.className = 'anno-line-widget';
-            return this._editor.addLineWidget(line, lineNode, {
-                above: true,
-                insertAt: 0
-            });
-        }
-        return widget;
+        if (widget) return widget;
+        var lineNode = document.createElement('div');
+        lineNode.className = 'anno-line-widget';
+        lineNode.innerHTML = '&nbsp;';
+        return this._editor.addLineWidget(line, lineNode, {
+            above: true,
+            insertAt: 0
+        });
     };
     Doc.prototype._getAnnoPos = function(line, fromCh, toCh) {
         var gutterCharWidth = this._gutterWidth + this._charWidth;
