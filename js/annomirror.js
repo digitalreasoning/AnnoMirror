@@ -26,6 +26,7 @@
         this.color = options.color || '#333';
         this.data = options.data || { };
         this.nodes = options.nodes || [];
+        this.rendered = false;
         if (this.id == -1)           throw "Annotation.constructor requires an id parameter."
         if (this.start == undefined) throw "Annotation.constructor requires a start parameter.";
         if (this.end == undefined)   throw "Annotation.constructor requires an end parameter.";
@@ -77,7 +78,78 @@
             text: this._editor.getRange(start, end),
             data: options.data
         });
+        this._annotations.push(anno);
+        var viewport = this._editor.getViewport();
+        if (viewport.from <= start.line && start.line <= viewport.to)
+            this._displayAnnotation(anno);
+        return anno;
+    };
+    Doc.prototype.getAnnotations = function() {
+        var annos = [];
+        for (var i = 0; i < this._annotations.length; i++) 
+            annos.push(this._annotations[i].toHash());
+        return annos;
+    };
+    Doc.prototype.editAnnotation = function(anno, options) {
+        if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";
+        // Update the annotation properties.
+        anno.update(options);
+        // Update the annotation elements
+        for (var i = 0; i < anno.nodes.length; i++) {
+            var node = anno.nodes[i];
+            node.getElementsByClassName("text")[0].innerHTML = anno.title;
+            node.getElementsByClassName("indicator")[0].style['background-color'] = anno.color;
+            var arrows = node.getElementsByClassName('arrow');
+            if (arrows.length > 0)
+                for (var j = 0; j < arrows.length; j++)
+                    arrows[j].style['border-color'] = anno.color;
+        }
+    };
+    Doc.prototype.removeAnnotation = function(annoId) {
+        if (annoId === undefined) throw "An annotation id must be provided to 'removeAnnotation'.";
+        var idx;
+        for (var i = 0; i < this._annotations.length; i++)
+            if (this._annotations[i].id === annoId) {
+                idx = i; break;
+            }
+        if (idx == undefined) return false;
+        var anno = this._annotations.splice(idx, 1)[0];
+        for (var i = 0; i < anno.nodes.length; i++) {
+            var widget = anno.nodes[i].data.widget;
+            var node = anno.nodes[i];
+            if (node.parentNode) node.parentNode.removeChild(node);
+            // If the line widget has no more annotations then remove it.
+            if ($('.annotation', widget.node).length === 0) widget.clear();
+        }
+        return anno;
+    };
+    Doc.prototype.editor = function() { return this._editor; };
+    Doc.prototype.destroy = function() { 
+        this._editor.toTextArea();
+    };
+    // Private methods
+    // ----------------------------------------
+    Doc.prototype._init = function() {
+        var self = this;
+        this._editor = CM.fromTextArea(this.node, this._settings.codeMirror);
+        this._gutterWidth = this._editor.getGutterElement().offsetWidth;
+        this._charWidth = this._editor.defaultCharWidth();
+        this._editor.on('viewportChange', function(inst, from, to) {
+            console.log("Rendering viewport " + from + "-" + to);
+            for (var i = 0; i < self._annotations.length; i++) {
+                var anno = self._annotations[i];
+                if (anno.rendered === true) continue;
+                var start = self._editor.posFromIndex(anno.start); 
+                // If the start of the annotation is within the viewport, show it.
+                if (from <= start.line && start.line <= to)
+                    self._displayAnnotation(anno);
+            }
+        });
+    };
+    Doc.prototype._displayAnnotation = function(anno) {
         var nodes = [];
+        var start = this._editor.posFromIndex(anno.start);
+        var end = this._editor.posFromIndex(anno.end);
         // Single line annotation scenario
         if (start.line == end.line) {
             var widget = this._getOrCreateLineWidget(start.line, start.ch, end.ch, anno.title);
@@ -103,70 +175,23 @@
             }
         }
         anno.nodes = nodes;
+        anno.rendered = true;
         this._eventsOnAnno(anno);
         for (var i = 0; i < nodes.length; i++) 
             setData(nodes[i], { anno: anno });
-        this._annotations.push(anno);
-        return anno;
     };
-    Doc.prototype.getAnnotations = function() {
-        var annos = [];
-        for (var i = 0; i < this._annotations.length; i++) 
-            annos.push(this._annotations[i].toHash());
-        return annos;
-    };
-    Doc.prototype.editAnnotation = function(anno, options) {
-        if (!anno) throw "An annotation instance must be provided to 'editAnnotation'.";
-        // Update the annotation properties.
-        anno.update(options);
-        // Update the annotation elements
-        for (var i = 0; i < anno.nodes.length; i++) {
-            var node = anno.nodes[i];
-            node.getElementsByClassName("text")[0].innerHTML = anno.title;
-            node.getElementsByClassName("indicator")[0].style['background-color'] = anno.color;
-            var arrows = node.getElementsByClassName('arrow');
-            if (arrows.length > 0)
-                for (var j = 0; j < arrows.length; j++)
-                    arrows[j].style['border-color'] = anno.color;
-        }
-    };
-    Doc.prototype.removeAnnotation = function(annoOrId) {
-        if (!annoOrId) throw "An annotation instance or id must be provided to 'removeAnnotation'.";
-        var idx;
-        if (typeof annoOrId == 'number') {
-            for (var i = 0; i < this._annotations.length; i++)
-                if (this._annotations[i].id === annoOrId) {
-                    idx = i; break;
-                }
-        } else
-            idx = this._annotations.indexOf(annoOrId);
-        if (idx == undefined || idx == -1)
-            return false;
-        var anno = this._annotations.splice(idx, 1)[0];
-        for (var i = 0; i < anno.nodes.length; i++)
-            anno.nodes[i].parentNode.removeChild(anno.nodes[i]);
-        return anno;
-    };
-    Doc.prototype.editor = function() { return this._editor; };
-    Doc.prototype.destroy = function() { 
-        this._editor.toTextArea();
-    };
-    // Private methods
-    // ----------------------------------------
-    Doc.prototype._init = function() {
-        this._editor = CM.fromTextArea(this.node, this._settings.codeMirror);
-        this._gutterWidth = this._editor.getGutterElement().offsetWidth;
-        this._charWidth = this._editor.defaultCharWidth();
-    };
+    // A label is a part of an annotation.
     Doc.prototype._displayLabel = function(anno, widget, fromCh, toCh, leftArrow, rightArrow) {
         var pxPos = this._getAnnoPos(widget.line.lineNo(), fromCh, toCh, anno.title);
         var annoNode = document.createElement('div');
+        var lineNo = widget.line.lineNo();
+        var indWidth = this._editor.getRange({ line: lineNo, ch: fromCh }, { line: lineNo, ch: toCh }).length * this._charWidth;
         annoNode.className = 'annotation';
         annoNode.style.left = pxPos.left + 'px';
         annoNode.style.width = pxPos.width + 'px';
         annoNode.innerHTML = [
             '<span class="text">', anno.title, '</span>',
-            '<div class="indicator" style="background-color: ', anno.color, ';width: ' + (anno.text.length * this._charWidth) + 'px"></div>'
+            '<div class="indicator" style="background-color: ', anno.color, ';width: ' + indWidth + 'px"></div>'
         ].join('');
         annoNode.dataset.id = anno.id;
         widget.node.appendChild(annoNode);
@@ -176,12 +201,16 @@
             toCh: toCh
         });
         // Add the multi-line arrows as needed.
-        if (leftArrow || rightArrow) {
+        if (leftArrow) {
             var arrowDiv = document.createElement('div');
-            arrowDiv.className = 'arrow';
+            arrowDiv.className = 'arrow left';
             arrowDiv.style['border-color'] = anno.color;
-            if (leftArrow)  arrowDiv.className += ' left';
-            if (rightArrow) arrowDiv.className += ' right';
+            annoNode.getElementsByClassName('indicator')[0].appendChild(arrowDiv);
+        }
+        if (rightArrow) {
+            var arrowDiv = document.createElement('div');
+            arrowDiv.className = 'arrow right';
+            arrowDiv.style['border-color'] = anno.color;
             annoNode.getElementsByClassName('indicator')[0].appendChild(arrowDiv);
         }
         return annoNode;

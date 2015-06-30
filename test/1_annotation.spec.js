@@ -199,17 +199,21 @@ describe('Doc.removeAnnotation', function() {
         var error;
         try { doc.removeAnnotation(); }
         catch (err) { error = err; }
-        expect(error.substring(0, 22)).toEqual('An annotation instance');
-    });
-    it('accepts an annotation instance', function() {
-        doc.removeAnnotation(anno);
-        expect($('.annotation').length).toEqual(0);
-        expect(doc._annotations.length).toEqual(0);
+        expect(error.substring(0, 22)).toEqual('An annotation id must ');
     });
     it('accepts an annotation id', function() {
         doc.removeAnnotation(anno.id);
         expect($('.annotation').length).toEqual(0);
         expect(doc._annotations.length).toEqual(0);
+    });
+    it('accepts annotations from .getAnnotations', function() {
+        doc.removeAnnotation(doc.getAnnotations()[0].id);
+        expect($('.annotation').length).toEqual(0);
+        expect(doc._annotations.length).toEqual(0);
+    });
+    it('removing annotations will also remove any empty line widgets', function() {
+       doc.removeAnnotation(anno.id); 
+        expect($('.anno-line-widget').length).toEqual(0);
     });
 });
 
@@ -269,7 +273,7 @@ describe('Doc.getAnnotations', function() {
         expect(annos.length).toEqual(1);
         var anno2 = doc.addAnnotation(33, 64);
         var anno3 = doc.addAnnotation(65, 73);
-        doc.removeAnnotation(anno3);
+        doc.removeAnnotation(anno3.id);
         var annos = doc.getAnnotations();
         expect(annos.length).toEqual(2);
     });
