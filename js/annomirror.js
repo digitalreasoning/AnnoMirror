@@ -123,6 +123,9 @@
         }
         return anno;
     };
+    Doc.prototype.removeAllAnnotations = function() {
+        // Placeholder
+    };
     Doc.prototype.editor = function() { return this._editor; };
     Doc.prototype.destroy = function() { 
         this._editor.toTextArea();
@@ -147,6 +150,7 @@
         });
     };
     Doc.prototype._displayAnnotation = function(anno) {
+        anno.rendered = true;
         var nodes = [];
         var start = this._editor.posFromIndex(anno.start);
         var end = this._editor.posFromIndex(anno.end);
@@ -175,7 +179,6 @@
             }
         }
         anno.nodes = nodes;
-        anno.rendered = true;
         this._eventsOnAnno(anno);
         for (var i = 0; i < nodes.length; i++) 
             setData(nodes[i], { anno: anno });

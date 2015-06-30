@@ -60,10 +60,10 @@ $(document).ready(function() {
         console.log(nodeTypesHash);
 
         var $actions = $('.actions');
-        for (var idx in nodeTypesHash) {
-            var $btn = $('<button type="button">' + idx + '</button>');
-            $btn.get(0).dataset.type = idx;
-            $btn.data('type', idx);
+        for (var type in nodeTypesHash) {
+            var $btn = $('<button type="button">' + type + '</button>');
+            $btn.get(0).dataset.type = type;
+            $btn.data('type', type);
             $btn.css('background-color', '#'+Math.floor(Math.random()*16777215).toString(16));
             $btn.click(function() {
                 removeAnnotations();
@@ -74,7 +74,15 @@ $(document).ready(function() {
                     var start = getNodeIdx(node, 'first');
                     var end = getNodeIdx(node, 'last');
                     if (typeof start !== 'number' || typeof end !== 'number') continue;
-                    doc.addAnnotation(start, end, { title: id, color: $(this).css('background-color') });
+                    var title = id;
+                    if (this.dataset.type === 't'   || 
+                        this.dataset.type === 'p'   || 
+                        this.dataset.type === 'ner' ||
+                        this.dataset.type === 'extractor') title = node.value;
+                    doc.addAnnotation(start, end, { 
+                        title: title, 
+                        color: $(this).css('background-color') 
+                    });
                     cnt++;
                 }
                 console.log('Displayed ' + cnt + '/' + Object.keys(nodesHash).length + ' annotations in ' + ((Date.now() - startTime) / 1000) + ' seconds.');
