@@ -1,6 +1,8 @@
 # AnnoMirror
 browser-based annotation viewer
 
+![AnnoMirror Screenshot](http://i.imgur.com/Gz4fhDk.png)
+
 # Development
 
 ```
