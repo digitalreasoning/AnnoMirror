@@ -138,7 +138,6 @@
         this._gutterWidth = this._editor.getGutterElement().offsetWidth;
         this._charWidth = this._editor.defaultCharWidth();
         this._editor.on('viewportChange', function(inst, from, to) {
-            console.log("Rendering lines " + from + "-" + to);
             for (var i = 0; i < self._annotations.length; i++) {
                 var anno = self._annotations[i];
                 if (anno.rendered === true) continue;
