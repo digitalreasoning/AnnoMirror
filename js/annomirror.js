@@ -80,7 +80,7 @@
         });
         this._annotations.push(anno);
         var viewport = this._editor.getViewport();
-        if (viewport.from <= start.line && start.line <= viewport.to)
+        if (viewport.from <= start.line && start.line < viewport.to)
             this._displayAnnotation(anno);
         return anno;
     };
@@ -138,13 +138,13 @@
         this._gutterWidth = this._editor.getGutterElement().offsetWidth;
         this._charWidth = this._editor.defaultCharWidth();
         this._editor.on('viewportChange', function(inst, from, to) {
-            console.log("Rendering viewport " + from + "-" + to);
+            console.log("Rendering lines " + from + "-" + to);
             for (var i = 0; i < self._annotations.length; i++) {
                 var anno = self._annotations[i];
                 if (anno.rendered === true) continue;
                 var start = self._editor.posFromIndex(anno.start); 
                 // If the start of the annotation is within the viewport, show it.
-                if (from <= start.line && start.line <= to)
+                if (from <= start.line && start.line < to)
                     self._displayAnnotation(anno);
             }
         });
@@ -259,18 +259,18 @@
             insertAt: 0
         });
     };
-    Doc.prototype._getAnnoPos = function(line, fromCh, toCh, text) {
+    Doc.prototype._getAnnoPos = function(line, fromCh, toCh, title) {
         var gutterCharWidth = this._gutterWidth + this._charWidth;
         var pos = {
             left:  this._editor.cursorCoords({ line: line, ch: fromCh }).left - gutterCharWidth,
             right: this._editor.cursorCoords({ line: line, ch: toCh   }).left - gutterCharWidth
         };
         pos.width = pos.right - pos.left;
-        // Take the text into account.
-        var textWidth = text.length * this._charWidth;
-        if (textWidth > pos.width) {
-            pos.left -= textWidth / 2 - pos.width / 2;
-            pos.width = textWidth;
+        // Take the title into account.
+        var titleWidth = title.length * this._charWidth;
+        if (titleWidth > pos.width) {
+            pos.left -= titleWidth / 2 - pos.width / 2;
+            pos.width = titleWidth;
             pos.right = pos.left + pos.width;
         }
         return pos;
