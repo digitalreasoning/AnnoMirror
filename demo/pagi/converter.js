@@ -79,6 +79,7 @@ $(document).ready(function() {
                         this.dataset.type === 'p'   || 
                         this.dataset.type === 'ner' ||
                         this.dataset.type === 'extractor') title = node.value;
+                    else if (this.dataset.type === 'aclause') title = node.type;
                     doc.addAnnotation(start, end, { 
                         title: title, 
                         color: $(this).css('background-color') 
