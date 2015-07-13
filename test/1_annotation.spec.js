@@ -1,5 +1,7 @@
-jasmine.getFixtures().fixturesPath = 'test/fixtures';
-jasmine.getStyleFixtures().fixturesPath = './';
+var path = '';
+if (typeof window.__karma__ !== 'undefined') path += 'base/'
+jasmine.getFixtures().fixturesPath = path + 'test/fixtures';
+jasmine.getStyleFixtures().fixturesPath = path + '';
 
 var loadTextareaFixture = function() {
     loadFixtures('textarea.html');
@@ -350,7 +352,7 @@ describe('Annotation anatomy', function() {
         });
         it('contains the correctly sized annotation bar', function() {
             expect($('.indicator', singleAnno.nodes[0]).width())
-                  .toEqual(Math.floor(editor.defaultCharWidth() * singleAnno.text.length));
+                  .toEqual(Math.floor(doc._charWidth * singleAnno.text.length));
         });
         it('marks text when hovered', function() {
             var e = document.createEvent("HTMLEvents");

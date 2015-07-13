@@ -1,4 +1,6 @@
-jasmine.getFixtures().fixturesPath = 'test/fixtures';
+var path = '';
+if (typeof window.__karma__ !== 'undefined') path += 'base/'
+jasmine.getFixtures().fixturesPath = path + 'test/fixtures';
 
 describe('AnnoMirror.fromTextArea', function() {
     var node;

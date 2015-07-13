@@ -136,7 +136,7 @@
         var self = this;
         this._editor = CM.fromTextArea(this.node, this._settings.codeMirror);
         this._gutterWidth = this._editor.getGutterElement().offsetWidth;
-        this._charWidth = this._editor.defaultCharWidth();
+        this._charWidth = Math.floor(this._editor.defaultCharWidth());
         this._editor.on('viewportChange', function(inst, from, to) {
             for (var i = 0; i < self._annotations.length; i++) {
                 var anno = self._annotations[i];
@@ -232,15 +232,15 @@
                 // Checks if the "from" and "to" fall within another label.
                 var exactMatch = labelNode.data.fromCh === fromCh && 
                                  labelNode.data.toCh === toCh;
-                var fromIntersect = parseInt(labelNode.offsetLeft) < parseInt(newPos.left) && 
-                                    parseInt(newPos.left) < parseInt(labelNode.offsetRight);
-                var toIntersect   = parseInt(labelNode.offsetLeft) < parseInt(newPos.right) && 
-                                    parseInt(newPos.right) < parseInt(labelNode.offsetRight);
+                var fromIntersect = labelNode.offsetLeft < newPos.left && 
+                                    newPos.left < labelNode.offsetRight;
+                var toIntersect   = labelNode.offsetLeft < newPos.right && 
+                                    newPos.right < labelNode.offsetRight;
                 // Checks if the new label "wraps" other labels.
-                var subsetIntersect = (parseInt(newPos.left) <= parseInt(labelNode.offsetLeft) && 
-                                       parseInt(labelNode.offsetRight) <= parseInt(newPos.right)) ||
-                                       (parseInt(newPos.left) <= parseInt(labelNode.offsetLeft) && 
-                                       parseInt(labelNode.offsetRight) <= parseInt(newPos.right))
+                var subsetIntersect = (newPos.left <= labelNode.offsetLeft && 
+                                       labelNode.offsetRight <= newPos.right) ||
+                                      (newPos.left <= labelNode.offsetLeft && 
+                                       labelNode.offsetRight <= newPos.right)
                 // If the "to" or "from" of the new label lies inside
                 // another label then we don't want to use this lineWidget.
                 if (exactMatch || fromIntersect || toIntersect || subsetIntersect) {
