@@ -7,12 +7,11 @@ browser-based annotation viewer
 
 ```
 npm install 
-bower install
 ```
 
 # Testing
 
 ```
-npm test # One-off
-grunt watch # Monitors files and runs tests accordingly
+npm run test-single-run # One-off
+npm test                # Monitors files and runs tests accordingly
 ```
