@@ -3,3 +3,5 @@ node_modules
 .grunt
 _SpecRunner.html
 npm-debug.log
+coverage/
+.DS_Store

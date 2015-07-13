@@ -1,5 +1,9 @@
 module.exports = function(config) {
     config.set({
+        preprocessors: {
+            'js/**/*.js': 'coverage',
+            'test/**/*.spec.js': 'coverage'
+        },
         files: [
             'bower_components/jquery/dist/jquery.js',
             'bower_components/jasmine-jquery/lib/jasmine-jquery.js',
@@ -22,13 +26,19 @@ module.exports = function(config) {
         autoWatch: true,
         frameworks: ['jasmine'],
         browsers: ['Chrome', 'Firefox'],
-        reporters: ['spec'],
+        reporters: ['spec', 'coverage', 'coveralls'],
         specReporter: { maxLogLines: 5 },
         plugins: [
             'karma-chrome-launcher',
             'karma-firefox-launcher',
             'karma-spec-reporter',
-            'karma-jasmine'
-        ]
+            'karma-jasmine',
+            'karma-coverage',
+            'karma-coveralls'
+        ],
+        coverageReporter: {
+            type: 'lcov',
+            dir: 'coverage/'
+        }
     });
 };
