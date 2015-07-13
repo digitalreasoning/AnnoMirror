@@ -1,5 +1,5 @@
 module.exports = function(config) {
-    config.set({
+    var settings = {
         preprocessors: {
             'js/**/*.js': 'coverage',
             'test/**/*.spec.js': 'coverage'
@@ -39,6 +39,15 @@ module.exports = function(config) {
         coverageReporter: {
             type: 'lcov',
             dir: 'coverage/'
+        },
+        customLaunchers: {
+            Chrome_travis_ci: {
+                base: 'Chrome',
+                flags: ['--no-sandbox']
+            }
         }
-    });
+    };
+    if (process.env.TRAVIS)
+        settings.browsers = ['Chrome_travis_ci', 'Firefox'];
+    config.set(settings);
 };
